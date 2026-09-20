@@ -8,6 +8,8 @@ import {
   type RoadmapEdge,
 } from "../lib/api";
 import { box, input } from "../components/auth";
+import { StoryDiagram } from "../components/story-diagram";
+import { FamilyTree } from "../components/family-tree";
 
 const STATUSES = Object.keys(CHAPTER_STATUS_LABEL) as ChapterStatus[];
 
@@ -21,6 +23,7 @@ export function RoadmapPage() {
   const [edgeTo, setEdgeTo] = React.useState("");
   const [edgeLabel, setEdgeLabel] = React.useState("");
   const [editing, setEditing] = React.useState<Record<string, { title: string; summary: string }>>({});
+  const [tab, setTab] = React.useState<"diagram" | "list" | "family">("diagram");
   const [err, setErr] = React.useState("");
 
   async function load() {
@@ -128,9 +131,24 @@ export function RoadmapPage() {
       <Link to={`/projects/${projectId}`}>← Project</Link>
       <h1>Roadmap — Alur Cerita ({chapters.length} bab)</h1>
       <p style={{ fontSize: 14, color: "#666" }}>
-        Versi list (Fase 3). Diagram visual + Family Tree hadir di Fase 4.
+        Alur Cerita: diagram node per bab (Fase 4). Family Tree dibangun otomatis dari relasi keluarga.
       </p>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        {(["diagram", "list", "family"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            style={{ fontWeight: tab === t ? "bold" : "normal" }}
+          >
+            {t === "diagram" ? "Alur Cerita (Diagram)" : t === "list" ? "Daftar Bab" : "Family Tree"}
+          </button>
+        ))}
+      </div>
       {err && <p style={{ color: "crimson" }}>{err}</p>}
+      {tab === "diagram" && projectId && <StoryDiagram projectId={projectId} />}
+      {tab === "family" && projectId && <FamilyTree projectId={projectId} />}
+      {tab === "list" && (
+      <>
 
       <h2>Tambah bab</h2>
       <form onSubmit={create}>
@@ -202,6 +220,8 @@ export function RoadmapPage() {
             <button type="submit">Sambung</button>
           </form>
         </>
+      )}
+      </>
       )}
     </main>
   );

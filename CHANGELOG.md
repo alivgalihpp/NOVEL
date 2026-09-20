@@ -8,6 +8,22 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Fase 4] - 2026-09-20
+### Ditambah
+- Roadmap diagram visual (React Flow, PRD §3.6.1): tab "Alur Cerita (Diagram)" di `/projects/:id/roadmap`.
+  Node per bab (warna per status, highlight plot twist), geser node → posisi tersimpan otomatis
+  (`roadmap_pos_x/y`), tarik garis antar node untuk menyambung, pilih garis + Backspace untuk memutus,
+  klik node → panel edit judul/ringkasan/status/twist, tambah/hapus node dari kanvas.
+- Family Tree otomatis (PRD §3.6.2): tab "Family Tree", dibangun client-side dari relasi
+  bertipe `parent/child/sibling/spouse` (layout generasi + garis suami-istri/saudara putus-putus),
+  klik node → halaman edit karakter. Karakter tanpa relasi keluarga tidak tampil.
+- Backend `GET /projects/:id/relationships` (semua relasi se-project, bahan tree; tetap cek ownership).
+- Tab "Daftar Bab" mempertahankan UI list Fase 3.
+- Dependen frontend: `@xyflow/react` 12.
+### Konvensi yang ditetapkan
+- Arti tipe relasi dari halaman karakter X memilih Y: "Y adalah [tipe] bagi X"
+  (mis. tipe `parent` ⇒ Y orang tua X). Family Tree mengikuti konvensi ini.
+
 ## [Fase 3] - 2026-09-20
 ### Ditambah
 - Roadmap versi list (backend + frontend, PRD §3.6.1 tanpa diagram visual).

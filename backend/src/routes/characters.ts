@@ -278,4 +278,16 @@ export const characterRoutes = new Elysia()
         .where(eq(characterRelationships.id, params.relationshipId));
       return { ok: true };
     },
-  );
+  )
+  // List SEMUA relasi dalam project (bahan Family Tree, PRD §3.6.2)
+  .get("/projects/:id/relationships", async ({ headers, jwt, params, status }) => {
+    const user = await authenticate(headers, (tok) => jwt.verify(tok));
+    if (!user) return status(401, { message: "Unauthorized" });
+    const project = await getOwnedProject(user.id, params.id);
+    if (!project) return status(404, { message: "Project tidak ditemukan" });
+    const rows = await db
+      .select()
+      .from(characterRelationships)
+      .where(eq(characterRelationships.projectId, params.id));
+    return { relationships: rows };
+  });

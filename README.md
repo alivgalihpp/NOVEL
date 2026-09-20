@@ -36,6 +36,11 @@ Platform Penulisan Novel Berbantuan AI. Lihat blueprint produk di `novelcraft-pr
     flag `is_plot_twist`), koneksi `/projects/:id/edges` (tolak self-loop & duplikat),
     assign karakter/tempat per bab (`.../chapters/:chapterId/characters|places`, PRD §4.9).
   - Frontend: `/projects/:id/roadmap` (daftar terurut, ubah status, tandai twist, sambung/putus koneksi + label).
+- ✅ Fase 4: Roadmap diagram + Family Tree (PRD §3.6).
+  - Tab "Alur Cerita (Diagram)": React Flow — node per bab, drag persist posisi, connect/delete garis,
+    klik node → panel edit. Tab "Daftar Bab" (Fase 3) tetap ada.
+  - Tab "Family Tree": otomatis dari relasi keluarga, klik node → edit karakter.
+  - Backend: `GET /projects/:id/relationships` (semua relasi se-project).
 - 📝 Tracking rilis: lihat `CHANGELOG.md` (wajib diupdate tiap fase).
 
 ## Fase PRD §9

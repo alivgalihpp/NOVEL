@@ -201,6 +201,11 @@ export const api = {
       `/projects/${projectId}/characters/${characterId}/relationships/${relationshipId}`,
       { method: "DELETE" },
     ),
+  // Semua relasi se-project (bahan Family Tree, PRD §3.6.2)
+  listAllRelationships: (projectId: string) =>
+    request<{ relationships: Relationship[] }>(
+      `/projects/${projectId}/relationships`,
+    ),
   // --- Tempat (PRD §3.5) ---
   listPlaces: (projectId: string) =>
     request<{ places: Place[] }>(`/projects/${projectId}/places`),
