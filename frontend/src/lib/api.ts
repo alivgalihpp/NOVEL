@@ -93,6 +93,36 @@ export const REL_LABEL: Record<RelationshipType, string> = {
   spouse: "Pasangan",
   other: "Lainnya",
 };
+
+export type ChapterStatus = "outline" | "draft" | "final";
+
+export interface Chapter {
+  id: string;
+  projectId: string;
+  chapterNumber: number;
+  title: string;
+  outlineSummary: string;
+  content: string;
+  isPlotTwist: boolean;
+  status: ChapterStatus;
+  wordCount: number;
+  roadmapPosX: number | null;
+  roadmapPosY: number | null;
+}
+
+export interface RoadmapEdge {
+  id: string;
+  projectId: string;
+  sourceChapterId: string;
+  targetChapterId: string;
+  label: string | null;
+}
+
+export const CHAPTER_STATUS_LABEL: Record<ChapterStatus, string> = {
+  outline: "Outline",
+  draft: "Draft",
+  final: "Final",
+};
 export const api = {
   register: (body: { email: string; password: string; displayName: string }) =>
     request<{ token: string; user: User }>("/auth/register", {
@@ -191,6 +221,44 @@ export const api = {
     }),
   deletePlace: (projectId: string, placeId: string) =>
     request<{ ok: boolean }>(`/projects/${projectId}/places/${placeId}`, {
+      method: "DELETE",
+    }),
+  // --- Bab & Roadmap list (PRD §3.6.1, Fase 3: belum diagram visual) ---
+  listChapters: (projectId: string) =>
+    request<{ chapters: Chapter[] }>(`/projects/${projectId}/chapters`),
+  createChapter: (
+    projectId: string,
+    body: { title: string; outlineSummary?: string; chapterNumber?: number; status?: ChapterStatus; isPlotTwist?: boolean },
+  ) =>
+    request<{ chapter: Chapter }>(`/projects/${projectId}/chapters`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateChapter: (
+    projectId: string,
+    chapterId: string,
+    body: Partial<Chapter>,
+  ) =>
+    request<{ chapter: Chapter }>(
+      `/projects/${projectId}/chapters/${chapterId}`,
+      { method: "PATCH", body: JSON.stringify(body) },
+    ),
+  deleteChapter: (projectId: string, chapterId: string) =>
+    request<{ ok: boolean }>(`/projects/${projectId}/chapters/${chapterId}`, {
+      method: "DELETE",
+    }),
+  listEdges: (projectId: string) =>
+    request<{ edges: RoadmapEdge[] }>(`/projects/${projectId}/edges`),
+  createEdge: (
+    projectId: string,
+    body: { sourceChapterId: string; targetChapterId: string; label?: string },
+  ) =>
+    request<{ edge: RoadmapEdge }>(`/projects/${projectId}/edges`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  deleteEdge: (projectId: string, edgeId: string) =>
+    request<{ ok: boolean }>(`/projects/${projectId}/edges/${edgeId}`, {
       method: "DELETE",
     }),
 };

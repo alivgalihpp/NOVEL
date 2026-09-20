@@ -13,6 +13,7 @@ import { Dashboard } from "./pages/dashboard";
 import { ProjectDetail } from "./pages/project-detail";
 import { CharacterDetailPage, CharactersPage } from "./pages/characters";
 import { PlaceDetailPage, PlacesPage } from "./pages/places";
+import { RoadmapPage } from "./pages/roadmap";
 import { getToken } from "./lib/api";
 
 function Home() {
@@ -96,6 +97,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           element={
             <RequireAuth>
               <PlaceDetailPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:id/roadmap"
+          element={
+            <RequireAuth>
+              <RoadmapPage />
             </RequireAuth>
           }
         />

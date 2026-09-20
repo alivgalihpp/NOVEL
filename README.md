@@ -31,6 +31,12 @@ Platform Penulisan Novel Berbantuan AI. Lihat blueprint produk di `novelcraft-pr
     Semua endpoint cek kepemilikan project (404 untuk milik user lain). Tanpa migrasi baru (tabel sudah ada).
   - Frontend: `/projects/:id/characters`, `/projects/:id/characters/:charId` (edit + relasi keluarga),
     `/projects/:id/places`, `/projects/:id/places/:placeId`.
+- ✅ Fase 3: Roadmap versi list (PRD §3.6.1, belum diagram visual).
+  - Backend: CRUD `/projects/:id/chapters` (nomor unik per project, auto `max+1`; status `outline/draft/final`;
+    flag `is_plot_twist`), koneksi `/projects/:id/edges` (tolak self-loop & duplikat),
+    assign karakter/tempat per bab (`.../chapters/:chapterId/characters|places`, PRD §4.9).
+  - Frontend: `/projects/:id/roadmap` (daftar terurut, ubah status, tandai twist, sambung/putus koneksi + label).
+- 📝 Tracking rilis: lihat `CHANGELOG.md` (wajib diupdate tiap fase).
 
 ## Fase PRD §9
 1. Auth + dashboard + CRUD project (manual)
