@@ -1,10 +1,11 @@
 import { Elysia, t } from "elysia";
 import { eq } from "drizzle-orm";
-import { mkdir, unlink } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { db } from "../db";
 import { projects } from "../db/schema";
 import { authenticate, jwtPlugin } from "../auth";
 import { getOwnedProject } from "../ownership";
+import { removeProjectCovers } from "../cascade";
 
 // Cover disimpan di disk (backend/uploads/covers, gitignored) — bukan di DB.
 // PRD §3.8: default putih polos (cover_image_url NULL), tombol upload sendiri.
@@ -17,16 +18,6 @@ const ALLOWED: Record<string, { ext: string; contentType: string }> = {
   "image/webp": { ext: "webp", contentType: "image/webp" },
   "image/gif": { ext: "gif", contentType: "image/gif" },
 };
-
-async function removeExisting(projectId: string) {
-  for (const { ext } of Object.values(ALLOWED)) {
-    try {
-      await unlink(new URL(`${projectId}.${ext}`, COVERS_DIR));
-    } catch {
-      // tidak ada → abaikan
-    }
-  }
-}
 
 export const coverRoutes = new Elysia()
   .use(jwtPlugin)
@@ -49,7 +40,7 @@ export const coverRoutes = new Elysia()
       if (file.size > MAX_BYTES)
         return status(400, { message: "Ukuran file maksimal 2MB" });
       await mkdir(COVERS_DIR, { recursive: true });
-      await removeExisting(params.id);
+      await removeProjectCovers(params.id);
       await Bun.write(
         new URL(`${params.id}.${kind.ext}`, COVERS_DIR),
         file,
@@ -73,7 +64,7 @@ export const coverRoutes = new Elysia()
     if (!user) return status(401, { message: "Unauthorized" });
     const project = await getOwnedProject(user.id, params.id);
     if (!project) return status(404, { message: "Project tidak ditemukan" });
-    await removeExisting(params.id);
+    await removeProjectCovers(params.id);
     await db
       .update(projects)
       .set({ coverImageUrl: null })

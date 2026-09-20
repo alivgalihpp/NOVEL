@@ -1,6 +1,6 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { api } from "../lib/api";
+import { Link, useNavigate } from "react-router-dom";
+import { api, setToken } from "../lib/api";
 import { box, input } from "../components/auth";
 
 type Provider = "mock" | "openai_compatible";
@@ -106,6 +106,39 @@ export function SettingsPage() {
         )}
       </form>
       {msg && <p>{msg}</p>}
+      <hr />
+      <DangerZone />
     </main>
+  );
+}
+
+function DangerZone() {
+  const nav = useNavigate();
+  const [password, setPassword] = React.useState("");
+  const [msg, setMsg] = React.useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!confirm("Hapus akun BESERTA SELURUH project, karakter, bab, dan data AI? Tidak bisa dibatalkan!")) return;
+    if (!confirm("Yakin? Ini penghapusan permanen.")) return;
+    try {
+      await api.deleteAccount(password);
+      setToken(null);
+      nav("/register");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Gagal menghapus akun");
+    }
+  }
+
+  return (
+    <section style={{ border: "2px solid #b00", borderRadius: 8, padding: 12, marginTop: 16 }}>
+      <h2 style={{ color: "#b00" }}>Zona Berbahaya</h2>
+      <p style={{ fontSize: 14 }}>Hapus akun beserta seluruh data (project, karakter, bab, relasi, kunci AI).</p>
+      <form onSubmit={submit}>
+        <input style={input} type="password" placeholder="Konfirmasi password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <button type="submit" style={{ background: "#b00", color: "#fff" }}>Hapus akun permanen</button>
+      </form>
+      {msg && <p style={{ color: "crimson" }}>{msg}</p>}
+    </section>
   );
 }

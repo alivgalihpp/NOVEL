@@ -8,6 +8,26 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Fase 9] - 2026-09-20
+### Ditambah
+- Hardening (PRD §7): rate limit umum 300/menit per IP + khusus auth 30/menit
+  (via `AUTH_LIMIT_PER_MINUTE`/`GLOBAL_LIMIT_PER_MINUTE`, 429 bila lewat;
+  limiter AI Fase 6 tetap berlaku), security headers
+  (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`).
+- Hapus akun + seluruh data: `DELETE /auth/account` (wajib password benar) —
+  semua project di-cascade, settings AI + user dihapus, file cover ikut terhapus.
+  UI: "Zona Berbahaya" di `/settings` (konfirmasi ganda).
+- Helper `deleteProjectCascade` dipakai bersama hapus project & hapus akun
+  (sekarang juga membersihkan file cover — sebelumnya tertinggal di disk).
+### Diperbaiki
+- Hook keamanan yang didaftarkan via `.use(plugin)` ternyata tidak dieksekusi di
+  Elysia 1.4.30 pada struktur app ini (terbukti: header hilang, 429 tak muncul) —
+  dipindah inline ke instance utama (`index.ts`), helper tetap di `security.ts`.
+### Catatan keamanan
+- Rate limit in-memory (per instance). Multi-instance → ganti Redis.
+- Produksi wajib HTTPS (reverse proxy) + `JWT_SECRET` panjang & unik;
+  ganti secret membuat kunci AI tersimpan tak terbaca (perlu input ulang di Settings).
+
 ## [Fase 8] - 2026-09-20
 ### Ditambah
 - Preview tampilan buku (PRD §3.8): halaman `/projects/:id/preview` — cover

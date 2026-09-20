@@ -54,6 +54,9 @@ Platform Penulisan Novel Berbantuan AI. Lihat blueprint produk di `novelcraft-pr
 - ✅ Fase 8: Preview + upload cover (PRD §3.8).
   - Backend: `POST/DELETE /projects/:id/cover`, `GET /uploads/covers/:nama` (validasi tipe/ukuran).
   - Frontend: `/projects/:id/preview` (cover + daftar isi + isi bab berurutan).
+- ✅ Fase 9: Hardening (PRD §7).
+  - Rate limit umum + auth, security headers, `DELETE /auth/account` (zona berbahaya di Settings).
+  - Produksi: wajib HTTPS via reverse proxy, `JWT_SECRET` unik, Redis bila multi-instance.
 - 📝 Tracking rilis: lihat `CHANGELOG.md` (wajib diupdate tiap fase).
 
 ## Fase PRD §9

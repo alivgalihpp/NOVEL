@@ -1,8 +1,9 @@
 import { Elysia, t } from "elysia";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
-import { users } from "../db/schema";
+import { projects, userAiSettings, users } from "../db/schema";
 import { authenticate, jwtPlugin, sanitizeUser } from "../auth";
+import { deleteProjectCascade } from "../cascade";
 
 export const authRoutes = new Elysia({ prefix: "/auth" })
   .use(jwtPlugin)
@@ -72,4 +73,29 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     const user = await authenticate(headers, (tok) => jwt.verify(tok));
     if (!user) return status(401, { message: "Unauthorized" });
     return { user: sanitizeUser(user) };
-  });
+  })
+  // Hapus akun + SELURUH data (PRD §7). Wajib konfirmasi password.
+  .delete(
+    "/account",
+    async ({ headers, jwt, body, status }) => {
+      const user = await authenticate(headers, (tok) => jwt.verify(tok));
+      if (!user) return status(401, { message: "Unauthorized" });
+      const ok = await Bun.password.verify(body.password, user.passwordHash);
+      if (!ok) return status(401, { message: "Password salah" });
+      const projs = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(eq(projects.userId, user.id));
+      for (const p of projs) await deleteProjectCascade(p.id);
+      await db
+        .delete(userAiSettings)
+        .where(eq(userAiSettings.userId, user.id));
+      await db.delete(users).where(eq(users.id, user.id));
+      return { ok: true };
+    },
+    {
+      body: t.Object({
+        password: t.String({ minLength: 1, maxLength: 128 }),
+      }),
+    },
+  );

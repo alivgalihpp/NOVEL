@@ -135,6 +135,11 @@ export const api = {
       body: JSON.stringify(body),
     }),
   me: () => request<{ user: User }>("/auth/me"),
+  deleteAccount: (password: string) =>
+    request<{ ok: boolean }>("/auth/account", {
+      method: "DELETE",
+      body: JSON.stringify({ password }),
+    }),
   listProjects: () => request<{ projects: Project[] }>("/projects"),
   createProject: (body: {
     title: string;

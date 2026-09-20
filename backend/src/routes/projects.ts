@@ -1,19 +1,9 @@
 import { Elysia, t } from "elysia";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
-import {
-  aiGenerationLogs,
-  chapterCharacters,
-  chapterPlaces,
-  chapters,
-  characterRelationships,
-  characters,
-  places,
-  projectAiBriefs,
-  projects,
-  roadmapEdges,
-} from "../db/schema";
+import { projects } from "../db/schema";
 import { authenticate, jwtPlugin } from "../auth";
+import { deleteProjectCascade } from "../cascade";
 
 const createBody = t.Object({
   title: t.String({ minLength: 1, maxLength: 255 }),
@@ -122,30 +112,6 @@ export const projectRoutes = new Elysia({ prefix: "/projects" })
       .limit(1);
     if (!owned[0]) return status(404, { message: "Project tidak ditemukan" });
 
-    // Cascade manual (skema tanpa FK constraint — hapus anak dulu).
-    const chapterRows = await db
-      .select({ id: chapters.id })
-      .from(chapters)
-      .where(eq(chapters.projectId, params.id));
-    for (const c of chapterRows) {
-      await db
-        .delete(chapterCharacters)
-        .where(eq(chapterCharacters.chapterId, c.id));
-      await db.delete(chapterPlaces).where(eq(chapterPlaces.chapterId, c.id));
-    }
-    await db.delete(chapters).where(eq(chapters.projectId, params.id));
-    await db.delete(roadmapEdges).where(eq(roadmapEdges.projectId, params.id));
-    await db
-      .delete(characterRelationships)
-      .where(eq(characterRelationships.projectId, params.id));
-    await db.delete(characters).where(eq(characters.projectId, params.id));
-    await db.delete(places).where(eq(places.projectId, params.id));
-    await db
-      .delete(aiGenerationLogs)
-      .where(eq(aiGenerationLogs.projectId, params.id));
-    await db
-      .delete(projectAiBriefs)
-      .where(eq(projectAiBriefs.projectId, params.id));
-    await db.delete(projects).where(eq(projects.id, params.id));
+    await deleteProjectCascade(params.id);
     return { ok: true };
   });
