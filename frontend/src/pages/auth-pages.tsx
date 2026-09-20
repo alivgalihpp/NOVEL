@@ -5,20 +5,17 @@ import { Button, Err, Field, Input, TopBar } from "../components/ui";
 
 function Shell({ title, kicker, children }: { title: string; kicker: string; children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-bg">
       <TopBar />
-      <main className="mx-auto grid w-full max-w-5xl flex-1 gap-10 px-5 py-12 md:grid-cols-[1fr_1fr]">
-        <div className="hidden md:block">
+      <main className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-10 px-6 py-12 md:grid-cols-[1fr_1fr]">
+        <div className="hidden md:block space-y-4">
           <p className="kicker">{kicker}</p>
-          <h1 className="font-display mt-3 text-5xl leading-tight font-semibold">{title}</h1>
-          <div className="rule-double mt-6 pt-6">
-            <p className="font-display text-xl leading-relaxed text-ink-soft italic">
-              “Tokoh yang baik lahir dari catatan yang rapi.”
-            </p>
-            <p className="kicker mt-3">arsip NovelCraft</p>
-          </div>
+          <h1 className="font-display text-5xl leading-tight font-bold text-ink">{title}</h1>
+          <p className="text-ink-soft text-base leading-relaxed">
+            “Menulis adalah menyusun kembali dunia dalam kepala ke atas lembar-lembar sunyi.”
+          </p>
         </div>
-        <div className="rounded-lg border border-line bg-card p-7">{children}</div>
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-xl">{children}</div>
       </main>
     </div>
   );
@@ -63,7 +60,7 @@ export function Login() {
       </form>
       <p className="mt-5 text-center text-sm text-ink-soft">
         Belum punya akun?{" "}
-        <Link to="/register" className="font-medium text-ember-deep underline underline-offset-4">
+        <Link to="/register" className="font-semibold text-accent hover:underline">
           Daftar di sini
         </Link>
       </p>
@@ -114,7 +111,7 @@ export function Register() {
       </form>
       <p className="mt-5 text-center text-sm text-ink-soft">
         Sudah punya akun?{" "}
-        <Link to="/login" className="font-medium text-ember-deep underline underline-offset-4">
+        <Link to="/login" className="font-semibold text-accent hover:underline">
           Masuk
         </Link>
       </p>

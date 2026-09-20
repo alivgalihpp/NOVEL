@@ -60,7 +60,7 @@ export function ProjectDetail() {
     return (
       <ProjectShell title="…">
         <Err message={err} />
-        <p>Memuat…</p>
+        <p className="text-ink-soft">Memuat…</p>
       </ProjectShell>
     );
 
@@ -72,56 +72,56 @@ export function ProjectDetail() {
       title={project.title}
       meta={
         <>
-          <Badge tone={status === "completed" ? "moss" : status === "in_progress" ? "gold" : "line"}>
+          <Badge tone={status === "completed" ? "accent" : status === "in_progress" ? "warning" : "surface"}>
             {STATUS_LABEL[status]}
           </Badge>
           {project.genre && <Badge>{project.genre}</Badge>}
-          {project.creationMode === "ai_assisted" && <Badge tone="ember">disusun AI</Badge>}
+          {project.creationMode === "ai_assisted" && <Badge tone="accent">✦ AI</Badge>}
         </>
       }
     >
-      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-line bg-line">
+      <div className="grid grid-cols-3 gap-3">
         {[
           [`${chapters.length}`, `bab${project.targetChapterCount ? ` / ${project.targetChapterCount}` : ""}`],
           [`${words.toLocaleString("id-ID")}`, "kata tertulis"],
           [`${finals}`, "bab final"],
         ].map(([n, l]) => (
-          <div key={l} className="bg-card px-4 py-5 text-center">
-            <p className="font-display text-3xl font-semibold">{n}</p>
+          <Card key={l} className="px-4 py-5 text-center">
+            <p className="font-display text-3xl font-bold tracking-tight">{n}</p>
             <p className="kicker mt-1">{l}</p>
-          </div>
+          </Card>
         ))}
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <Card className="p-5">
-          <p className="kicker">Lanjut menulis</p>
+        <Card>
+          <p className="kicker">lanjut menulis</p>
           {chapters.length === 0 ? (
             <p className="mt-2 text-sm text-ink-soft">
-              Belum ada bab. Susun dulu di <Link to="roadmap" className="underline underline-offset-4">Roadmap</Link>.
+              Belum ada bab. Susun dulu di <Link to="roadmap" className="text-accent underline underline-offset-4">Roadmap</Link>.
             </p>
           ) : (
-            <ul className="mt-2 divide-y divide-line-soft">
+            <ul className="mt-3 divide-y divide-border">
               {chapters.slice(0, 5).map((c) => (
-                <li key={c.id} className="flex items-baseline justify-between gap-2 py-1.5 text-sm">
-                  <Link to="write" className="truncate hover:underline hover:underline-offset-4">
-                    <span className="font-mono text-xs text-muted">{String(c.chapterNumber).padStart(2, "0")}</span>{" "}
+                <li key={c.id} className="flex items-baseline justify-between gap-2 py-2 text-sm">
+                  <Link to="write" className="truncate text-ink hover:text-accent hover:underline hover:underline-offset-4">
+                    <span className="mr-2 font-mono text-xs text-ink-soft">{String(c.chapterNumber).padStart(2, "0")}</span>
                     {c.title}
                   </Link>
-                  <span className="shrink-0 font-mono text-xs text-muted">{c.wordCount} kt</span>
+                  <span className="shrink-0 font-mono text-xs text-ink-soft">{c.wordCount} kt</span>
                 </li>
               ))}
             </ul>
           )}
-          <div className="mt-3 flex gap-2">
-            <Link to="roadmap"><Button variant="line">Roadmap</Button></Link>
-            <Link to="write"><Button variant="primary">Menulis</Button></Link>
+          <div className="mt-4 flex gap-2">
+            <Link to="roadmap"><Button variant="surface"><Icon name="flow" /> Roadmap</Button></Link>
+            <Link to="write"><Button variant="primary"><Icon name="pen" /> Menulis</Button></Link>
           </div>
         </Card>
 
-        <Card className="p-5">
-          <p className="kicker">Sampul arsip</p>
-          <form onSubmit={save} className="mt-2 space-y-3">
+        <Card>
+          <p className="kicker">sampul arsip</p>
+          <form onSubmit={save} className="mt-3 space-y-3">
             <Field label="Judul">
               <Input value={title} onChange={(e) => setTitle(e.target.value)} />
             </Field>
@@ -134,7 +134,7 @@ export function ProjectDetail() {
               </Select>
             </Field>
             <div className="flex items-center gap-2">
-              <Button type="submit" variant="ink">Simpan</Button>
+              <Button type="submit" variant="primary">Simpan</Button>
               <Button type="button" variant="danger" onClick={remove}>
                 <Icon name="trash" /> Hapus
               </Button>

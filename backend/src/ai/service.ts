@@ -192,9 +192,9 @@ export class MockProvider implements AiProvider {
   }
 }
 
-const ROADMAP_SYSTEM = `Kamu generator roadmap novel. Balas HANYA JSON valid (tanpa markdown) dengan bentuk:
+const ROADMAP_SYSTEM = `Kamu generator roadmap novel. Balas HANYA JSON valid (tanpa prosa di luar JSON, tanpa markdown, tanpa gambar) dengan bentuk:
 {"chapters":[{"chapter_number":1,"title":"...","summary":"...","is_plot_twist":false}],"placeholder_characters":[{"name":"...","role":"protagonist|antagonist|supporting|minor","personality_traits":"...","physical_description":"..."}],"placeholder_places":[{"name":"...","type":"...","description":"..."}]}
-Aturan: tepat N bab sesuai permintaan; selipkan is_plot_twist=true di satu bab yang paling pas (atau tidak sama sekali bila twist tidak cocok); placeholder konsisten dengan roadmap; semua teks Bahasa Indonesia.`;
+Aturan: tepat N bab sesuai permintaan; selipkan is_plot_twist=true di satu bab yang paling pas (atau tidak sama sekali bila twist tidak cocok); placeholder konsisten dengan roadmap; semua teks Bahasa Indonesia; jangan pernah menyebut gambar/file/attachment.`;
 
 /** Provider OpenAI-compatible (OpenAI, Ollama, LM Studio, dsb. via baseURL). */
 export class OpenAiCompatibleProvider implements AiProvider {
@@ -213,7 +213,13 @@ export class OpenAiCompatibleProvider implements AiProvider {
       `Goals/tujuan cerita: ${brief.goals}`,
       `Jumlah bab: ${brief.chapterCount}`,
     ].join("\n");
-    const url = `${this.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+
+    // Gunakan URL persis seperti yang diinput user, pastikan mengarah ke chat/completions jika belum ada
+    let cleanBase = this.baseUrl.trim().replace(/\/+$/, "");
+    const url = cleanBase.endsWith("/chat/completions") 
+      ? cleanBase 
+      : `${cleanBase}/chat/completions`;
+
     let res: Response;
     try {
       res = await fetch(url, {
@@ -268,6 +274,7 @@ export class OpenAiCompatibleProvider implements AiProvider {
     const ctx = [
       `Novel: ${brief.projectTitle}`,
       `Bab ${brief.chapterNumber}: ${brief.chapterTitle}`,
+      `PERHATIAN: Anda hanya boleh mengembalikan TEKS naratif bab. Jangan sebutkan gambar, file, atau hal di luar teks.`,
       `Ringkasan bab ini: ${brief.outlineSummary.trim() || "(kosong)"}`,
       brief.previousSummaries.length > 0
         ? `Ringkasan bab sebelumnya:\n${brief.previousSummaries
@@ -287,7 +294,11 @@ export class OpenAiCompatibleProvider implements AiProvider {
     ]
       .filter(Boolean)
       .join("\n\n");
-    const url = `${this.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+    let cleanBase = this.baseUrl.trim().replace(/\/+$/, "");
+    const url = cleanBase.endsWith("/chat/completions") 
+      ? cleanBase 
+      : `${cleanBase}/chat/completions`;
+
     let res: Response;
     try {
       res = await fetch(url, {
@@ -356,13 +367,19 @@ export async function resolveRoadmapProvider(
     .where(eq(userAiSettings.userId, userId))
     .limit(1);
   const s = rows[0];
+  
+  // Jika user memilih provider "mock", langsung pakai Mock
+  if (s?.provider === "mock") {
+    return { provider: new MockProvider(), source: "mock" };
+  }
+
   if (s?.provider === "openai_compatible" && s.apiKeyEncrypted) {
     const key = await decryptApiKey(s.apiKeyEncrypted);
     return {
       provider: new OpenAiCompatibleProvider(
         key,
-        s.baseUrl || "https://api.openai.com/v1",
-        s.model || "gpt-4o-mini",
+        s.baseUrl || "https://elizabeth-waterproof-plant-screenshot.trycloudflare.com",
+        s.model || "9router/Combomaut",
       ),
       source: "user",
     };
@@ -372,8 +389,8 @@ export async function resolveRoadmapProvider(
     return {
       provider: new OpenAiCompatibleProvider(
         serverKey,
-        process.env.AI_BASE_URL?.trim() || "https://api.openai.com/v1",
-        process.env.AI_MODEL?.trim() || "gpt-4o-mini",
+        process.env.AI_BASE_URL?.trim() || "https://elizabeth-waterproof-plant-screenshot.trycloudflare.com",
+        process.env.AI_MODEL?.trim() || "9router/Combomaut",
       ),
       source: "server",
     };

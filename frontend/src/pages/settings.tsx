@@ -6,6 +6,8 @@ import { Button, Card, Err, Field, Input, Ok, Page, Select } from "../components
 type Provider = "mock" | "openai_compatible";
 
 const PRESETS: Record<string, { baseUrl: string; model: string }> = {
+  "Cloudflare (kamu)": { baseUrl: "https://elizabeth-waterproof-plant-screenshot.trycloudflare.com", model: "9router/Combomaut" },
+  "9router": { baseUrl: "https://api.9router.com/v1", model: "9router/Combomaut" },
   "OpenAI": { baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
   "Ollama (lokal)": { baseUrl: "http://localhost:11434/v1", model: "llama3.1" },
   "LM Studio (lokal)": { baseUrl: "http://localhost:1234/v1", model: "local-model" },
@@ -15,8 +17,8 @@ const PRESETS: Record<string, { baseUrl: string; model: string }> = {
 export function SettingsPage() {
   const [provider, setProvider] = React.useState<Provider>("mock");
   const [apiKey, setApiKey] = React.useState("");
-  const [baseUrl, setBaseUrl] = React.useState(PRESETS["OpenAI"].baseUrl);
-  const [model, setModel] = React.useState(PRESETS["OpenAI"].model);
+  const [baseUrl, setBaseUrl] = React.useState(PRESETS["Cloudflare (kamu)"].baseUrl);
+  const [model, setModel] = React.useState(PRESETS["Cloudflare (kamu)"].model);
   const [hasKey, setHasKey] = React.useState(false);
   const [effective, setEffective] = React.useState("");
   const [msg, setMsg] = React.useState("");
@@ -100,7 +102,7 @@ export function SettingsPage() {
                 <span className="kicker mb-1 block">Preset</span>
                 <div className="flex flex-wrap gap-2">
                   {Object.keys(PRESETS).map((p) => (
-                    <Button key={p} type="button" variant="ghost" onClick={() => applyPreset(p)}>{p}</Button>
+                    <Button key={p} type="button" variant={p === "Cloudflare (kamu)" ? "primary" : "ghost"} onClick={() => applyPreset(p)}>{p}</Button>
                   ))}
                 </div>
               </div>
