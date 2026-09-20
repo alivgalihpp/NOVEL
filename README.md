@@ -51,6 +51,9 @@ Platform Penulisan Novel Berbantuan AI. Lihat blueprint produk di `novelcraft-pr
 - ✅ Fase 7: AI Chapter Writer (PRD §6.2).
   - Backend: `POST /projects/:id/chapters/:chapterId/generate` (konteks + fallback, auto-draft, log).
   - Frontend: tombol Generate aktif di `/projects/:id/write`.
+- ✅ Fase 8: Preview + upload cover (PRD §3.8).
+  - Backend: `POST/DELETE /projects/:id/cover`, `GET /uploads/covers/:nama` (validasi tipe/ukuran).
+  - Frontend: `/projects/:id/preview` (cover + daftar isi + isi bab berurutan).
 - 📝 Tracking rilis: lihat `CHANGELOG.md` (wajib diupdate tiap fase).
 
 ## Fase PRD §9

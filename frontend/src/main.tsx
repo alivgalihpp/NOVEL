@@ -16,6 +16,7 @@ import { PlaceDetailPage, PlacesPage } from "./pages/places";
 import { RoadmapPage } from "./pages/roadmap";
 import { WritePage } from "./pages/write";
 import { SettingsPage } from "./pages/settings";
+import { PreviewPage } from "./pages/preview";
 import { getToken } from "./lib/api";
 
 function Home() {
@@ -123,6 +124,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           element={
             <RequireAuth>
               <SettingsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:id/preview"
+          element={
+            <RequireAuth>
+              <PreviewPage />
             </RequireAuth>
           }
         />

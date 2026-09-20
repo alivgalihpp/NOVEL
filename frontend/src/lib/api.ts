@@ -302,4 +302,25 @@ export const api = {
       `/projects/${projectId}/chapters/${chapterId}/generate`,
       { method: "POST" },
     ),
+  // --- Cover & Preview (PRD §3.8) — multipart, tidak pakai helper JSON ---
+  uploadCover: async (projectId: string, file: File) => {
+    const form = new FormData();
+    form.append("cover", file);
+    const headers: Record<string, string> = {};
+    const token = getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE}/projects/${projectId}/cover`, {
+      method: "POST",
+      headers,
+      body: form,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok)
+      throw new Error((data as { message?: string }).message ?? `Upload gagal (${res.status})`);
+    return data as { project: Project };
+  },
+  deleteCover: (projectId: string) =>
+    request<{ ok: boolean }>(`/projects/${projectId}/cover`, { method: "DELETE" }),
+  coverSrc: (coverImageUrl: string | null) =>
+    coverImageUrl ? `${API_BASE}${coverImageUrl}` : null,
 };

@@ -8,6 +8,16 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Fase 8] - 2026-09-20
+### Ditambah
+- Preview tampilan buku (PRD §3.8): halaman `/projects/:id/preview` — cover
+  (atau putih polos bila belum ada), judul, total kata, daftar isi, dan isi semua bab
+  berurutan sesuai roadmap.
+- Upload cover sendiri: `POST /projects/:id/cover` (multipart, hanya PNG/JPEG/WebP/GIF,
+  maks 2MB), file di disk `backend/uploads/` (gitignored) + path di `cover_image_url`,
+  serve publik `GET /uploads/covers/:nama` (nama tervalidasi anti-traversal + cache 1 hari),
+  `DELETE /projects/:id/cover` kembali ke putih polos. Semua cek kepemilikan project.
+
 ## [Fase 7] - 2026-09-20
 ### Ditambah
 - AI Chapter Writer (PRD §3.7 + kontrak §6.2): `POST /projects/:id/chapters/:chapterId/generate`.

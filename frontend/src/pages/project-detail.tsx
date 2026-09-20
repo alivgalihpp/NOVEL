@@ -75,6 +75,7 @@ export function ProjectDetail() {
       <ul>
         <li><Link to={`/projects/${id}/roadmap`}>Roadmap (Alur Cerita)</Link></li>
         <li><Link to={`/projects/${id}/write`}>Menulis</Link></li>
+        <li><Link to={`/projects/${id}/preview`}>Preview</Link></li>
         <li><Link to={`/projects/${id}/characters`}>Perpustakaan Karakter</Link></li>
         <li><Link to={`/projects/${id}/places`}>Perpustakaan Tempat</Link></li>
         <li>Menulis — Fase 5</li>

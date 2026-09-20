@@ -6,6 +6,7 @@ import { characterRoutes } from "./routes/characters";
 import { placeRoutes } from "./routes/places";
 import { chapterRoutes } from "./routes/chapters";
 import { aiRoutes } from "./routes/ai";
+import { coverRoutes } from "./routes/covers";
 
 const app = new Elysia()
   .use(
@@ -20,7 +21,7 @@ const app = new Elysia()
   }))
   .get("/", () => ({
     ok: true,
-    message: "NovelCraft API (Bun + Elysia + MySQL) — Fase 6: AI Roadmap Generator",
+    message: "NovelCraft API (Bun + Elysia + MySQL) — Fase 8: Preview + Cover",
     docs: "Lihat PRD novelcraft-prd.md bagian 9 untuk fase berikutnya.",
   }))
   .use(authRoutes)
@@ -29,6 +30,7 @@ const app = new Elysia()
   .use(placeRoutes)
   .use(chapterRoutes)
   .use(aiRoutes)
+  .use(coverRoutes)
   .listen(Number(process.env.PORT ?? 3000));
 
 console.log(
