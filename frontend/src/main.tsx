@@ -11,6 +11,8 @@ import { RequireAuth, box } from "./components/auth";
 import { Login, Register } from "./pages/auth-pages";
 import { Dashboard } from "./pages/dashboard";
 import { ProjectDetail } from "./pages/project-detail";
+import { CharacterDetailPage, CharactersPage } from "./pages/characters";
+import { PlaceDetailPage, PlacesPage } from "./pages/places";
 import { getToken } from "./lib/api";
 
 function Home() {
@@ -62,6 +64,38 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           element={
             <RequireAuth>
               <ProjectDetail />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:id/characters"
+          element={
+            <RequireAuth>
+              <CharactersPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:id/characters/:charId"
+          element={
+            <RequireAuth>
+              <CharacterDetailPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:id/places"
+          element={
+            <RequireAuth>
+              <PlacesPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:id/places/:placeId"
+          element={
+            <RequireAuth>
+              <PlaceDetailPage />
             </RequireAuth>
           }
         />

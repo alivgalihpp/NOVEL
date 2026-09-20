@@ -25,6 +25,12 @@ Platform Penulisan Novel Berbantuan AI. Lihat blueprint produk di `novelcraft-pr
     `GET/POST /projects`, `GET/PATCH/DELETE /projects/:id` (semua project di-scope ke user pemilik).
   - Migrasi: `bun run db:generate` (dari root) → SQL di `backend/drizzle/`; apply: `bun run db:migrate`.
   - Frontend: `/login`, `/register`, `/dashboard`, `/projects/:id` (proxy `/api` → backend).
+- ✅ Fase 2: Perpustakaan Karakter & Tempat (PRD §3.4–3.5).
+  - Backend: CRUD `/projects/:id/characters`, relasi `/projects/:id/characters/:characterId/relationships`
+    (validasi se-project, tolak relasi ke diri sendiri), CRUD `/projects/:id/places`.
+    Semua endpoint cek kepemilikan project (404 untuk milik user lain). Tanpa migrasi baru (tabel sudah ada).
+  - Frontend: `/projects/:id/characters`, `/projects/:id/characters/:charId` (edit + relasi keluarga),
+    `/projects/:id/places`, `/projects/:id/places/:placeId`.
 
 ## Fase PRD §9
 1. Auth + dashboard + CRUD project (manual)

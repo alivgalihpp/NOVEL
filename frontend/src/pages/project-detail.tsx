@@ -71,9 +71,10 @@ export function ProjectDetail() {
       </form>
       {msg && <p>{msg}</p>}
       <hr />
-      <h3>Modul berikutnya (PRD §9)</h3>
+      <h3>Modul project</h3>
       <ul>
-        <li>Karakter &amp; Tempat — Fase 2</li>
+        <li><Link to={`/projects/${id}/characters`}>Perpustakaan Karakter</Link></li>
+        <li><Link to={`/projects/${id}/places`}>Perpustakaan Tempat</Link></li>
         <li>Roadmap — Fase 3–4</li>
         <li>Menulis — Fase 5</li>
       </ul>
