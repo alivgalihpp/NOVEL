@@ -6,8 +6,8 @@ import { Button, Card, Err, Field, Input, Ok, Page, Select } from "../components
 type Provider = "mock" | "openai_compatible";
 
 const PRESETS: Record<string, { baseUrl: string; model: string }> = {
-  "Cloudflare (kamu)": { baseUrl: "https://elizabeth-waterproof-plant-screenshot.trycloudflare.com", model: "9router/Combomaut" },
-  "9router": { baseUrl: "https://api.9router.com/v1", model: "9router/Combomaut" },
+  "Cloudflare (kamu)": { baseUrl: "https://elizabeth-waterproof-plant-screenshot.trycloudflare.com", model: "Combomaut" },
+  "9router": { baseUrl: "https://api.9router.com/v1", model: "Combomaut" },
   "OpenAI": { baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
   "Ollama (lokal)": { baseUrl: "http://localhost:11434/v1", model: "llama3.1" },
   "LM Studio (lokal)": { baseUrl: "http://localhost:1234/v1", model: "local-model" },
