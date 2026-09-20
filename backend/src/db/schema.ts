@@ -175,3 +175,17 @@ export const aiGenerationLogs = mysqlTable("ai_generation_logs", {
   tokensUsed: int("tokens_used"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Fase 6: pengaturan AI per user (menu Settings). Kunci disimpan terenkripsi (AES-GCM,
+// kunci dari JWT_SECRET). NULL = belum diisi → pakai kunci server (.env) atau Mock.
+export const userAiSettings = mysqlTable("user_ai_settings", {
+  id: char("id", { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: char("user_id", { length: 36 }).notNull().unique(),
+  provider: mysqlEnum("provider", ["mock", "openai_compatible"])
+    .notNull()
+    .default("mock"),
+  apiKeyEncrypted: text("api_key_encrypted"),
+  baseUrl: text("base_url"),
+  model: varchar("model", { length: 255 }),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});

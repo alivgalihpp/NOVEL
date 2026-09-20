@@ -266,4 +266,35 @@ export const api = {
     request<{ ok: boolean }>(`/projects/${projectId}/edges/${edgeId}`, {
       method: "DELETE",
     }),
+  // --- AI (PRD §6, Fase 6: roadmap generator) ---
+  getAiSettings: () =>
+    request<{
+      settings: {
+        provider: "mock" | "openai_compatible";
+        hasKey: boolean;
+        baseUrl: string | null;
+        model: string | null;
+        effective: "user" | "server" | "mock";
+      };
+    }>("/settings/ai"),
+  updateAiSettings: (body: {
+    provider: "mock" | "openai_compatible";
+    apiKey?: string;
+    baseUrl?: string;
+    model?: string;
+  }) => request<{ ok: boolean; effective: string }>("/settings/ai", { method: "PUT", body: JSON.stringify(body) }),
+  deleteAiKey: () => request<{ ok: boolean }>("/settings/ai/key", { method: "DELETE" }),
+  aiAssist: (body: {
+    title: string;
+    genre?: string;
+    synopsis: string;
+    mainCharacter: string;
+    plotTwist?: string;
+    goals: string;
+    chapterCount: number;
+  }) =>
+    request<{ project: Project; chaptersCount: number; aiSource: string }>(
+      "/projects/ai-assist",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
 };

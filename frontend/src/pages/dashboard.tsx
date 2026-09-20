@@ -52,13 +52,14 @@ export function Dashboard() {
   function logout() {
     setToken(null);
     nav("/login");
-  }
-
-  return (
+  }  return (
     <main style={box}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1>Dashboard</h1>
-        <button onClick={logout}>Keluar</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link to="/settings">Pengaturan AI</Link>
+          <button onClick={logout}>Keluar</button>
+        </div>
       </div>
 
       <h2>Buat Project Baru (manual)</h2>
@@ -67,9 +68,8 @@ export function Dashboard() {
         <input style={input} placeholder="Genre (opsional)" value={genre} onChange={(e) => setGenre(e.target.value)} />
         <button type="submit">Buat</button>
       </form>
-      <p style={{ color: "#666", fontSize: 14 }}>
-        Mode “Dibantu AI” hadir di Fase 6 (PRD §3.2).
-      </p>
+
+      <AiAssistForm onDone={load} />
 
       <h2>Daftar Project ({projects.length})</h2>
       {err && <p style={{ color: "crimson" }}>{err}</p>}
@@ -86,5 +86,82 @@ export function Dashboard() {
       </ul>
       {projects.length === 0 && <p>Belum ada project. Buat satu di atas.</p>}
     </main>
+  );
+}
+
+/** Form onboarding "Dibantu AI" (PRD §3.2) — roadmap + placeholder dibuatkan AI, 100% bisa diedit. */
+function AiAssistForm({ onDone }: { onDone: () => void }) {
+  const nav = useNavigate();
+  const [open, setOpen] = React.useState(false);
+  const [f, setF] = React.useState({
+    title: "",
+    genre: "",
+    synopsis: "",
+    mainCharacter: "",
+    plotTwist: "",
+    goals: "",
+    chapterCount: "7",
+  });
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState("");
+
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setF({ ...f, [k]: e.target.value });
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await api.aiAssist({
+        title: f.title.trim(),
+        genre: f.genre.trim() || undefined,
+        synopsis: f.synopsis.trim(),
+        mainCharacter: f.mainCharacter.trim(),
+        plotTwist: f.plotTwist.trim() || undefined,
+        goals: f.goals.trim(),
+        chapterCount: Math.max(1, Math.min(100, Number(f.chapterCount) || 7)),
+      });
+      onDone();
+      nav(`/projects/${res.project.id}/roadmap`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Gagal generate");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open)
+    return (
+      <p>
+        <button onClick={() => setOpen(true)}>Buat project Dibantu AI</button>
+      </p>
+    );
+
+  return (
+    <section style={{ border: "1px solid #ccc", borderRadius: 8, padding: 12, margin: "12px 0" }}>
+      <h2>Dibantu AI — form singkat</h2>
+      <p style={{ fontSize: 13, color: "#666" }}>
+        AI membuatkan roadmap + placeholder karakter/tempat. Semua bisa diubah total setelahnya.
+        Tanpa kunci API, dipakai provider Mock (lihat <Link to="/settings">Pengaturan AI</Link>).
+      </p>
+      <form onSubmit={submit}>
+        <input style={input} placeholder="Judul novel *" value={f.title} onChange={set("title")} />
+        <input style={input} placeholder="Genre (opsional)" value={f.genre} onChange={set("genre")} />
+        <label>Sinopsis *</label>
+        <textarea style={{ ...input, minHeight: 80 }} value={f.synopsis} onChange={set("synopsis")} />
+        <label>Tokoh utama (nama + deskripsi singkat) *</label>
+        <input style={input} value={f.mainCharacter} onChange={set("mainCharacter")} />
+        <label>Plot twist (opsional — kosongkan bila ingin AI yang menentukan)</label>
+        <input style={input} value={f.plotTwist} onChange={set("plotTwist")} />
+        <label>Goals / tujuan cerita *</label>
+        <input style={input} value={f.goals} onChange={set("goals")} />
+        <label>Jumlah bab *</label>
+        <input style={input} type="number" min={1} max={100} value={f.chapterCount} onChange={set("chapterCount")} />
+        {err && <p style={{ color: "crimson" }}>{err}</p>}
+        <button type="submit" disabled={busy}>{busy ? "Generate... (bisa ~1 menit)" : "Generate roadmap"}</button>{" "}
+        <button type="button" onClick={() => setOpen(false)}>Batal</button>
+      </form>
+    </section>
   );
 }

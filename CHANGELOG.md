@@ -8,6 +8,25 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Fase 6] - 2026-09-20
+### Ditambah
+- AI Roadmap Generator (PRD §3.2 + kontrak §6.1): `POST /projects/ai-assist`
+  (sinopsis, tokoh utama, plot twist opsional, goals, jumlah bab) → project `ai_assisted`
+  + `project_ai_briefs` + N bab + placeholder karakter/tempat (`is_placeholder=true`)
+  + edge berurutan + `ai_generation_logs`. Semua hasil editable via UI Fase 2–5.
+- `AIProviderService` terabstraksi (PRD §8): `MockProvider` (deterministik, tanpa kunci —
+  twist di bab tengah bila plotTwist diisi) dan `OpenAiCompatibleProvider`
+  (format `chat/completions` + `response_format json_object`, dipakai untuk OpenAI/Ollama/LM Studio/Gemini).
+- Menu Settings per user (`/settings` + `GET/PUT /settings/ai`, `DELETE /settings/ai/key`):
+  pilih Mock atau kunci sendiri (preset baseURL/model), kunci disimpan AES-256-GCM
+  (turunan `JWT_SECRET`), kunci tidak pernah dikembalikan utuh ke client.
+- Urutan resolusi provider: kunci user → kunci server (`.env` AI_API_KEY/BASE_URL/MODEL) → Mock.
+  Lokal jalan tanpa kunci apa pun.
+- Rate limit endpoint AI: maks 5 request/menit per user (429). Migrasi `0001` (`user_ai_settings`).
+- Form onboarding AI di Dashboard → redirect ke Roadmap project baru.
+### Keputusan
+- Konvensi relasi Fase 4 dipakai untuk konsistensi placeholder (tidak ada relasi awal dari AI).
+
 ## [Fase 5] - 2026-09-20
 ### Ditambah
 - Modul Menulis manual (PRD §3.7 tanpa AI): halaman `/projects/:id/write`.

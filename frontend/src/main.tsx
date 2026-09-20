@@ -15,6 +15,7 @@ import { CharacterDetailPage, CharactersPage } from "./pages/characters";
 import { PlaceDetailPage, PlacesPage } from "./pages/places";
 import { RoadmapPage } from "./pages/roadmap";
 import { WritePage } from "./pages/write";
+import { SettingsPage } from "./pages/settings";
 import { getToken } from "./lib/api";
 
 function Home() {
@@ -114,6 +115,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           element={
             <RequireAuth>
               <WritePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <RequireAuth>
+              <SettingsPage />
             </RequireAuth>
           }
         />
