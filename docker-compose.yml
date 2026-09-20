@@ -1,0 +1,17 @@
+# Opsional — untuk yang punya Docker. Dev lokal saat ini pakai MySQL native Windows.
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: novelcraft-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-novelcraft}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - novelcraft-mysql-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+volumes:
+  novelcraft-mysql-data:

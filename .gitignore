@@ -1,0 +1,27 @@
+# deps
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# bun
+bun.lockb
+*.bun
+
+# env
+.env
+.env.local
+.env.*.local
+
+# drizzle
+drizzle/
+*.sql
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# uploads (local dev)
+uploads/

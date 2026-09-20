@@ -1,0 +1,15 @@
+{
+  "name": "novelcraft",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NovelCraft — Platform Penulisan Novel Berbantuan AI (Bun + MySQL)",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev:backend": "bun --hot run backend/src/index.ts",
+    "dev:frontend": "bun run --cwd frontend dev",
+    "dev": "bun run dev:backend & bun run dev:frontend",
+    "db:generate": "bunx drizzle-kit generate",
+    "db:migrate": "bunx drizzle-kit migrate",
+    "db:push": "bunx drizzle-kit push"
+  }
+}
