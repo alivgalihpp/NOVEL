@@ -17,23 +17,13 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
       .catch(() => setState("no"));
   }, []);
 
-  if (state === "loading") return <p style={{ padding: 24 }}>Memuat...</p>;
+  if (state === "loading")
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="font-display text-2xl italic">Membuka naskah…</p>
+      </div>
+    );
   if (state === "no")
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return <>{children}</>;
 }
-
-export const box: React.CSSProperties = {
-  fontFamily: "system-ui",
-  maxWidth: 720,
-  margin: "40px auto",
-  padding: 24,
-};
-
-export const input: React.CSSProperties = {
-  display: "block",
-  width: "100%",
-  padding: 8,
-  margin: "8px 0",
-  boxSizing: "border-box",
-};

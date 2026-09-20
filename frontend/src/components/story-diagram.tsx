@@ -14,13 +14,8 @@ import {
   type OnNodeDrag,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  api,
-  CHAPTER_STATUS_LABEL,
-  type Chapter,
-  type ChapterStatus,
-} from "../lib/api";
-import { input } from "./auth";
+import { api, CHAPTER_STATUS_LABEL, type Chapter, type ChapterStatus } from "../lib/api";
+import { Button, Err, Field, Icon, Input, Select, Textarea } from "./ui";
 
 type ChapterNodeData = {
   chapterNumber: number;
@@ -30,27 +25,32 @@ type ChapterNodeData = {
 } & Record<string, unknown>;
 
 const STATUS_BG: Record<ChapterStatus, string> = {
-  outline: "#ffffff",
-  draft: "#fffbeb",
-  final: "#ecfdf5",
+  outline: "#fffdf7",
+  draft: "#faf3df",
+  final: "#edf2e3",
 };
 
 function ChapterNode({ data }: { data: ChapterNodeData }) {
   return (
     <div
       style={{
-        border: data.isPlotTwist ? "3px solid #b00" : "2px solid #333",
-        borderRadius: 8,
+        border: data.isPlotTwist ? "2.5px solid #8c1d18" : "1.5px solid #1c1712",
+        borderRadius: 6,
         background: STATUS_BG[data.status],
-        padding: "8px 12px",
-        minWidth: 170,
-        maxWidth: 230,
+        padding: "10px 14px",
+        minWidth: 180,
+        maxWidth: 240,
+        fontFamily: "'Space Grotesk', system-ui, sans-serif",
       }}
     >
-      <div style={{ fontSize: 12, color: "#666" }}>Bab {data.chapterNumber} · {CHAPTER_STATUS_LABEL[data.status]}</div>
-      <div style={{ fontWeight: "bold" }}>{data.title}</div>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.16em", color: "#8d8471" }}>
+        BAB {data.chapterNumber} · {CHAPTER_STATUS_LABEL[data.status].toUpperCase()}
+      </div>
+      <div style={{ fontFamily: "Fraunces, Georgia, serif", fontWeight: 600, fontSize: 17, lineHeight: 1.25 }}>
+        {data.title}
+      </div>
       {data.isPlotTwist && (
-        <div style={{ fontSize: 11, background: "#b00", color: "#fff", display: "inline-block", padding: "1px 6px", marginTop: 4 }}>
+        <div style={{ marginTop: 4, display: "inline-block", background: "#8c1d18", color: "#fff4ee", fontSize: 10, letterSpacing: "0.14em", padding: "2px 7px" }}>
           PLOT TWIST
         </div>
       )}
@@ -65,8 +65,8 @@ function toNodes(chapters: Chapter[]): Node[] {
     id: c.id,
     type: "chapter",
     position: {
-      x: c.roadmapPosX ?? 60 + (i % 2) * 300,
-      y: c.roadmapPosY ?? Math.floor(i / 2) * 170 + 20,
+      x: c.roadmapPosX ?? 60 + (i % 2) * 320,
+      y: c.roadmapPosY ?? Math.floor(i / 2) * 180 + 20,
     },
     data: {
       chapterNumber: c.chapterNumber,
@@ -77,7 +77,10 @@ function toNodes(chapters: Chapter[]): Node[] {
   }));
 }
 
-function toEdges(chapters: { id: string }[], edges: { id: string; sourceChapterId: string; targetChapterId: string; label: string | null }[]): Edge[] {
+function toEdges(
+  chapters: { id: string }[],
+  edges: { id: string; sourceChapterId: string; targetChapterId: string; label: string | null }[],
+): Edge[] {
   const ids = new Set(chapters.map((c) => c.id));
   return edges
     .filter((e) => ids.has(e.sourceChapterId) && ids.has(e.targetChapterId))
@@ -86,7 +89,6 @@ function toEdges(chapters: { id: string }[], edges: { id: string; sourceChapterI
       source: e.sourceChapterId,
       target: e.targetChapterId,
       label: e.label ?? undefined,
-      animated: true,
     }));
 }
 
@@ -98,16 +100,13 @@ export function StoryDiagram({ projectId }: { projectId: string }) {
   const [form, setForm] = React.useState({ title: "", summary: "", status: "outline" as ChapterStatus, isPlotTwist: false });
   const [newTitle, setNewTitle] = React.useState("");
   const [err, setErr] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
 
   const load = React.useCallback(async () => {
     try {
-      const [c, e] = await Promise.all([
-        api.listChapters(projectId),
-        api.listEdges(projectId),
-      ]);
+      const [c, e] = await Promise.all([api.listChapters(projectId), api.listEdges(projectId)]);
       setChapters(c.chapters);
       setNodes((prev) => {
-        // Pertahankan posisi drag lokal yang belum tersimpan
         const pos = new Map(prev.map((n) => [n.id, n.position]));
         return toNodes(c.chapters).map((n) => {
           const p = pos.get(n.id);
@@ -116,6 +115,7 @@ export function StoryDiagram({ projectId }: { projectId: string }) {
       });
       setEdges(toEdges(c.chapters, e.edges));
       setSelected((sel) => c.chapters.find((x) => x.id === sel?.id) ?? null);
+      setErr("");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Gagal memuat diagram");
     }
@@ -142,7 +142,7 @@ export function StoryDiagram({ projectId }: { projectId: string }) {
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Gagal menyimpan posisi");
     }
-  }
+  };
 
   async function onConnect(conn: Connection) {
     if (!conn.source || !conn.target) return;
@@ -151,14 +151,8 @@ export function StoryDiagram({ projectId }: { projectId: string }) {
       return;
     }
     try {
-      const res = await api.createEdge(projectId, {
-        sourceChapterId: conn.source,
-        targetChapterId: conn.target,
-      });
-      setEdges((es) => [
-        ...es,
-        { id: res.edge.id, source: conn.source!, target: conn.target!, animated: true },
-      ]);
+      const res = await api.createEdge(projectId, { sourceChapterId: conn.source, targetChapterId: conn.target });
+      setEdges((es) => [...es, { id: res.edge.id, source: conn.source!, target: conn.target! }]);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Gagal menyambung");
       load();
@@ -192,6 +186,7 @@ export function StoryDiagram({ projectId }: { projectId: string }) {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!selected) return;
+    setSaving(true);
     try {
       await api.updateChapter(projectId, selected.id, {
         title: form.title.trim(),
@@ -202,6 +197,8 @@ export function StoryDiagram({ projectId }: { projectId: string }) {
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Gagal menyimpan");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -211,10 +208,7 @@ export function StoryDiagram({ projectId }: { projectId: string }) {
     try {
       const maxY = nodes.reduce((m, n) => Math.max(m, n.position.y), 0);
       const res = await api.createChapter(projectId, { title: newTitle.trim() });
-      await api.updateChapter(projectId, res.chapter.id, {
-        roadmapPosX: 60,
-        roadmapPosY: maxY + 170,
-      });
+      await api.updateChapter(projectId, res.chapter.id, { roadmapPosX: 60, roadmapPosY: maxY + 180 });
       setNewTitle("");
       await load();
     } catch (e) {
@@ -223,17 +217,20 @@ export function StoryDiagram({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div>
-      {err && <p style={{ color: "crimson" }}>{err}</p>}
-      <form onSubmit={addChapter} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-        <input style={{ ...input, margin: 0, maxWidth: 320 }} placeholder="Judul bab baru" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
-        <button type="submit">Tambah node</button>
+    <div className="p-4">
+      <Err message={err} />
+      <form onSubmit={addChapter} className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-2">
+          <Input placeholder="Judul bab baru…" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-64" />
+          <Button type="submit" variant="ink"><Icon name="plus" /> Node</Button>
+        </div>
+        <p className="max-w-md text-xs leading-relaxed text-muted">
+          Geser kartu untuk menata (tersimpan otomatis). Tarik garis antar kartu untuk menyambung alur.
+          Klik garis + <kbd className="rounded border border-line bg-paper px-1 font-mono">Backspace</kbd> untuk memutus. Klik kartu untuk menyunting.
+        </p>
       </form>
-      <p style={{ fontSize: 13, color: "#666" }}>
-        Geser node untuk mengatur posisi (tersimpan otomatis). Tarik garis antar node untuk menyambung.
-        Pilih garis + tekan <kbd>Backspace</kbd> untuk memutus. Klik node untuk mengedit.
-      </p>
-      <div style={{ height: 520, border: "1px solid #ccc", borderRadius: 8 }}>
+
+      <div className="xy-theme-novel h-[520px] overflow-hidden rounded-md border border-line">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -248,29 +245,46 @@ export function StoryDiagram({ projectId }: { projectId: string }) {
           deleteKeyCode={["Backspace", "Delete"]}
           fitView
         >
-          <Background />
+          <Background color="#d8cdae" gap={24} size={1} />
           <Controls />
           <MiniMap />
         </ReactFlow>
       </div>
+
       {selected && (
-        <form onSubmit={save} style={{ marginTop: 12, border: "1px solid #ddd", padding: 12, borderRadius: 8 }}>
-          <h3>Edit: Bab {selected.chapterNumber}</h3>
-          <label>Judul</label>
-          <input style={input} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <label>Ringkasan</label>
-          <textarea style={{ ...input, minHeight: 60 }} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} />
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ChapterStatus })}>
-              {(Object.keys(CHAPTER_STATUS_LABEL) as ChapterStatus[]).map((s) => (
-                <option key={s} value={s}>{CHAPTER_STATUS_LABEL[s]}</option>
-              ))}
-            </select>
-            <label>
-              <input type="checkbox" checked={form.isPlotTwist} onChange={(e) => setForm({ ...form, isPlotTwist: e.target.checked })} /> Plot twist
+        <form onSubmit={save} className="mt-3 rounded-md border border-line bg-paper p-4">
+          <div className="flex items-center justify-between border-b border-line-soft pb-2">
+            <h3 className="font-display text-lg font-semibold">Sunting — Bab {selected.chapterNumber}</h3>
+            <button type="button" onClick={() => setSelected(null)} className="rounded p-1 text-muted hover:text-ink" title="Tutup">
+              <Icon name="x" />
+            </button>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Field label="Judul">
+              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            </Field>
+            <Field label="Status">
+              <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ChapterStatus })}>
+                <option value="outline">Outline</option>
+                <option value="draft">Draft</option>
+                <option value="final">Final</option>
+              </Select>
+            </Field>
+          </div>
+          <div className="mt-3">
+            <Field label="Ringkasan">
+              <Textarea rows={2} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} />
+            </Field>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-soft">
+              <input type="checkbox" checked={form.isPlotTwist} onChange={(e) => setForm({ ...form, isPlotTwist: e.target.checked })} className="accent-[#8c1d18]" />
+              Tandai plot twist
             </label>
-            <button type="submit">Simpan</button>
-            <button type="button" onClick={() => setSelected(null)}>Tutup</button>
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" onClick={() => setSelected(null)}>Tutup</Button>
+              <Button type="submit" variant="primary" disabled={saving}>{saving ? "Menyimpan…" : "Simpan"}</Button>
+            </div>
           </div>
         </form>
       )}

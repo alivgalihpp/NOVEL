@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   api,
   CHAPTER_STATUS_LABEL,
@@ -7,11 +7,17 @@ import {
   type ChapterStatus,
   type RoadmapEdge,
 } from "../lib/api";
-import { box, input } from "../components/auth";
+import { Badge, Button, Card, Empty, Err, Field, Icon, Input, ProjectShell, Select, Textarea } from "../components/ui";
 import { StoryDiagram } from "../components/story-diagram";
 import { FamilyTree } from "../components/family-tree";
 
 const STATUSES = Object.keys(CHAPTER_STATUS_LABEL) as ChapterStatus[];
+
+const STATUS_TONE: Record<ChapterStatus, "line" | "gold" | "moss"> = {
+  outline: "line",
+  draft: "gold",
+  final: "moss",
+};
 
 export function RoadmapPage() {
   const { id: projectId } = useParams<{ id: string }>();
@@ -29,12 +35,10 @@ export function RoadmapPage() {
   async function load() {
     if (!projectId) return;
     try {
-      const [c, e] = await Promise.all([
-        api.listChapters(projectId),
-        api.listEdges(projectId),
-      ]);
+      const [c, e] = await Promise.all([api.listChapters(projectId), api.listEdges(projectId)]);
       setChapters(c.chapters);
       setEdges(e.edges);
+      setErr("");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Gagal memuat roadmap");
     }
@@ -49,10 +53,7 @@ export function RoadmapPage() {
     e.preventDefault();
     if (!projectId || !title.trim()) return;
     try {
-      await api.createChapter(projectId, {
-        title: title.trim(),
-        outlineSummary: summary.trim() || undefined,
-      });
+      await api.createChapter(projectId, { title: title.trim(), outlineSummary: summary.trim() || undefined });
       setTitle("");
       setSummary("");
       await load();
@@ -71,8 +72,8 @@ export function RoadmapPage() {
     }
   }
 
-  async function remove(chapterId: string) {
-    if (!projectId || !confirm("Hapus bab ini beserta koneksinya?")) return;
+  async function remove(chapterId: string, name: string) {
+    if (!projectId || !confirm(`Hapus "${name}" beserta koneksinya?`)) return;
     try {
       await api.deleteChapter(projectId, chapterId);
       await load();
@@ -126,103 +127,158 @@ export function RoadmapPage() {
     setEditing(next);
   }
 
+  const twists = chapters.filter((c) => c.isPlotTwist).length;
+
   return (
-    <main style={{ ...box, maxWidth: 860 }}>
-      <Link to={`/projects/${projectId}`}>← Project</Link>
-      <h1>Roadmap — Alur Cerita ({chapters.length} bab)</h1>
-      <p style={{ fontSize: 14, color: "#666" }}>
-        Alur Cerita: diagram node per bab (Fase 4). Family Tree dibangun otomatis dari relasi keluarga.
-      </p>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+    <ProjectShell
+      title="Peta alur"
+      meta={
+        <>
+          <Badge>{chapters.length} bab</Badge>
+          <Badge>{edges.length} sambungan</Badge>
+          {twists > 0 && <Badge tone="oxblood">{twists} twist</Badge>}
+        </>
+      }
+    >
+      <div className="flex gap-1 rounded-lg border border-line bg-card p-1">
         {(["diagram", "list", "family"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            style={{ fontWeight: tab === t ? "bold" : "normal" }}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              tab === t ? "bg-ink text-paper" : "text-ink-soft hover:bg-paper-deep"
+            }`}
           >
-            {t === "diagram" ? "Alur Cerita (Diagram)" : t === "list" ? "Daftar Bab" : "Family Tree"}
+            {t === "diagram" ? "Diagram" : t === "list" ? "Daftar" : "Silsilah"}
           </button>
         ))}
       </div>
-      {err && <p style={{ color: "crimson" }}>{err}</p>}
-      {tab === "diagram" && projectId && <StoryDiagram projectId={projectId} />}
-      {tab === "family" && projectId && <FamilyTree projectId={projectId} />}
+      <div className="mt-4">
+        <Err message={err} />
+      </div>
+
+      {tab === "diagram" && projectId && (
+        <Card className="overflow-hidden">
+          <StoryDiagram projectId={projectId} />
+        </Card>
+      )}
+      {tab === "family" && projectId && (
+        <Card className="overflow-hidden">
+          <FamilyTree projectId={projectId} />
+        </Card>
+      )}
+
       {tab === "list" && (
-      <>
-
-      <h2>Tambah bab</h2>
-      <form onSubmit={create}>
-        <input style={input} placeholder="Judul bab" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <textarea style={{ ...input, minHeight: 60 }} placeholder="Ringkasan bab (outline)" value={summary} onChange={(e) => setSummary(e.target.value)} />
-        <button type="submit">Tambah (nomor otomatis)</button>
-      </form>
-
-      <h2>Daftar bab</h2>
-      {chapters.length === 0 && <p>Belum ada bab.</p>}
-      <ol>
-        {chapters.map((c) => {
-          const outs = outgoing.get(c.id) ?? [];
-          const f = editing[c.id];
-          return (
-            <li key={c.id} style={{ marginBottom: 16, border: c.isPlotTwist ? "2px solid #b00" : "1px solid #ddd", padding: 12 }}>
-              {f ? (
-                <>
-                  <input style={input} value={f.title} onChange={(e) => setEditing({ ...editing, [c.id]: { ...f, title: e.target.value } })} />
-                  <textarea style={{ ...input, minHeight: 60 }} value={f.summary} onChange={(e) => setEditing({ ...editing, [c.id]: { ...f, summary: e.target.value } })} />
-                  <button onClick={() => saveEdit(c)}>Simpan</button>{" "}
-                  <button onClick={() => { const n = { ...editing }; delete n[c.id]; setEditing(n); }}>Batal</button>
-                </>
-              ) : (
-                <>
-                  <strong>Bab {c.chapterNumber}: {c.title}</strong>{" "}
-                  {c.isPlotTwist && <span style={{ background: "#b00", color: "#fff", padding: "2px 8px", fontSize: 12 }}>PLOT TWIST</span>}
-                  <p style={{ margin: "6px 0" }}>{c.outlineSummary || <em>(belum ada ringkasan)</em>}</p>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                    <select value={c.status} onChange={(e) => patch(c.id, { status: e.target.value as ChapterStatus })}>
-                      {STATUSES.map((s) => (<option key={s} value={s}>{CHAPTER_STATUS_LABEL[s]}</option>))}
-                    </select>
-                    <button onClick={() => patch(c.id, { isPlotTwist: !c.isPlotTwist })}>
-                      {c.isPlotTwist ? "Hapus tanda twist" : "Tandai plot twist"}
-                    </button>
-                    <button onClick={() => startEdit(c)}>Edit</button>
-                    <button onClick={() => remove(c.id)}>Hapus</button>
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: 14 }}>
-                    → Lanjut ke:{" "}
-                    {outs.length === 0 ? <em>(tidak ada — bab akhir / belum disambung)</em> : outs.map((e) => (
-                      <span key={e.id} style={{ marginRight: 8 }}>
-                        Bab {byId.get(e.targetChapterId)?.chapterNumber ?? "?"}
-                        {e.label ? ` (${e.label})` : ""}{" "}
-                        <button onClick={() => delEdge(e.id)}>putus</button>
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-
-      {chapters.length >= 2 && (
         <>
-          <h2>Sambung bab (koneksi alur)</h2>
-          <form onSubmit={addEdge} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <select value={edgeFrom} onChange={(e) => setEdgeFrom(e.target.value)}>
-              <option value="">— dari —</option>
-              {chapters.map((c) => (<option key={c.id} value={c.id}>Bab {c.chapterNumber}: {c.title}</option>))}
-            </select>
-            <select value={edgeTo} onChange={(e) => setEdgeTo(e.target.value)}>
-              <option value="">— ke —</option>
-              {chapters.map((c) => (<option key={c.id} value={c.id}>Bab {c.chapterNumber}: {c.title}</option>))}
-            </select>
-            <input placeholder='Label mis. "flashback" (opsional)' value={edgeLabel} onChange={(e) => setEdgeLabel(e.target.value)} />
-            <button type="submit">Sambung</button>
-          </form>
+          <Card className="p-4">
+            <form onSubmit={create} className="flex flex-col gap-3 md:flex-row md:items-end">
+              <div className="flex-1">
+                <Field label="Judul bab baru">
+                  <Input placeholder="cth. Badai di Pelabuhan" value={title} onChange={(e) => setTitle(e.target.value)} />
+                </Field>
+              </div>
+              <div className="flex-1">
+                <Field label="Ringkasan (outline)">
+                  <Input placeholder="Satu kalimat intisari…" value={summary} onChange={(e) => setSummary(e.target.value)} />
+                </Field>
+              </div>
+              <Button variant="ink" type="submit"><Icon name="plus" /> Nomor otomatis</Button>
+            </form>
+          </Card>
+
+          {chapters.length === 0 ? (
+            <div className="mt-4"><Empty title="Peta masih kosong." hint="Tambahkan bab pertama lewat formulir di atas." /></div>
+          ) : (
+            <ol className="mt-4 space-y-3">
+              {chapters.map((c) => {
+                const outs = outgoing.get(c.id) ?? [];
+                const f = editing[c.id];
+                return (
+                  <li key={c.id} className={`rounded-lg border bg-card p-4 ${c.isPlotTwist ? "border-oxblood" : "border-line"}`}>
+                    {f ? (
+                      <div className="space-y-2">
+                        <Input value={f.title} onChange={(e) => setEditing({ ...editing, [c.id]: { ...f, title: e.target.value } })} />
+                        <Textarea rows={2} value={f.summary} onChange={(e) => setEditing({ ...editing, [c.id]: { ...f, summary: e.target.value } })} />
+                        <div className="flex gap-2">
+                          <Button variant="ink" onClick={() => saveEdit(c)}>Simpan</Button>
+                          <Button variant="ghost" onClick={() => { const n = { ...editing }; delete n[c.id]; setEditing(n); }}>Batal</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-baseline gap-3">
+                            <span className="font-display text-3xl text-line italic select-none">
+                              {String(c.chapterNumber).padStart(2, "0")}
+                            </span>
+                            <div className="min-w-0">
+                              <h3 className="font-display truncate text-xl font-semibold">{c.title}</h3>
+                              <div className="mt-1 flex flex-wrap gap-1.5">
+                                <Badge tone={STATUS_TONE[c.status]}>{CHAPTER_STATUS_LABEL[c.status]}</Badge>
+                                {c.isPlotTwist && <Badge tone="oxblood">plot twist</Badge>}
+                                <Badge>{c.wordCount} kata</Badge>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex shrink-0 gap-1">
+                            <Select value={c.status} onChange={(e) => patch(c.id, { status: e.target.value as ChapterStatus })} className="w-auto py-1 text-xs">
+                              {STATUSES.map((s) => (<option key={s} value={s}>{CHAPTER_STATUS_LABEL[s]}</option>))}
+                            </Select>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-sm text-ink-soft">{c.outlineSummary || <em className="text-muted">Belum ada ringkasan.</em>}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                          <span className="kicker">lanjut ke</span>
+                          {outs.length === 0 ? (
+                            <em className="text-xs text-muted">ujung jalan — sambungkan di bawah</em>
+                          ) : (
+                            outs.map((e) => (
+                              <span key={e.id} className="inline-flex items-center gap-1 rounded-sm bg-paper-deep px-2 py-0.5 font-mono text-xs">
+                                → Bab {byId.get(e.targetChapterId)?.chapterNumber ?? "?"}
+                                {e.label ? ` · ${e.label}` : ""}
+                                <button onClick={() => delEdge(e.id)} className="text-muted hover:text-oxblood" title="Putus">
+                                  <Icon name="x" className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))
+                          )}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Button variant="ghost" onClick={() => patch(c.id, { isPlotTwist: !c.isPlotTwist })}>
+                            {c.isPlotTwist ? "Lepas tanda twist" : "Tandai twist"}
+                          </Button>
+                          <Button variant="ghost" onClick={() => startEdit(c)}>Ubah</Button>
+                          <Button variant="ghost" onClick={() => remove(c.id, c.title)}>
+                            <span className="text-oxblood">Hapus</span>
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+
+          {chapters.length >= 2 && (
+            <Card className="mt-4 p-4">
+              <p className="kicker">sambung bab</p>
+              <form onSubmit={addEdge} className="mt-2 flex flex-col gap-2 md:flex-row">
+                <Select value={edgeFrom} onChange={(e) => setEdgeFrom(e.target.value)} className="flex-1">
+                  <option value="">— dari —</option>
+                  {chapters.map((c) => (<option key={c.id} value={c.id}>Bab {c.chapterNumber}: {c.title}</option>))}
+                </Select>
+                <Select value={edgeTo} onChange={(e) => setEdgeTo(e.target.value)} className="flex-1">
+                  <option value="">— ke —</option>
+                  {chapters.map((c) => (<option key={c.id} value={c.id}>Bab {c.chapterNumber}: {c.title}</option>))}
+                </Select>
+                <Input placeholder='Label, mis. "flashback"' value={edgeLabel} onChange={(e) => setEdgeLabel(e.target.value)} className="flex-1" />
+                <Button type="submit" variant="line">Sambung</Button>
+              </form>
+            </Card>
+          )}
         </>
       )}
-      </>
-      )}
-    </main>
+    </ProjectShell>
   );
 }

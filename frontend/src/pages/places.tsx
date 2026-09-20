@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, type Place } from "../lib/api";
-import { box, input } from "../components/auth";
+import { Badge, Button, Card, Empty, Err, Field, Icon, Input, Ok, ProjectShell, Textarea } from "../components/ui";
 
 export function PlacesPage() {
   const { id: projectId } = useParams<{ id: string }>();
@@ -16,6 +16,7 @@ export function PlacesPage() {
     try {
       const res = await api.listPlaces(projectId);
       setPlaces(res.places);
+      setErr("");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Gagal memuat tempat");
     }
@@ -30,11 +31,7 @@ export function PlacesPage() {
     e.preventDefault();
     if (!projectId || !name.trim()) return;
     try {
-      await api.createPlace(projectId, {
-        name: name.trim(),
-        type: type.trim() || undefined,
-        isPlaceholder: placeholder,
-      });
+      await api.createPlace(projectId, { name: name.trim(), type: type.trim() || undefined, isPlaceholder: placeholder });
       setName("");
       setType("");
       setPlaceholder(false);
@@ -44,8 +41,8 @@ export function PlacesPage() {
     }
   }
 
-  async function remove(placeId: string) {
-    if (!projectId || !confirm("Hapus tempat ini?")) return;
+  async function remove(placeId: string, placeName: string) {
+    if (!projectId || !confirm(`Hapus "${placeName}"?`)) return;
     try {
       await api.deletePlace(projectId, placeId);
       await load();
@@ -55,30 +52,61 @@ export function PlacesPage() {
   }
 
   return (
-    <main style={box}>
-      <Link to={`/projects/${projectId}`}>← Project</Link>
-      <h1>Perpustakaan Tempat ({places.length})</h1>
-      {err && <p style={{ color: "crimson" }}>{err}</p>}
-      <form onSubmit={create}>
-        <input style={input} placeholder="Nama tempat" value={name} onChange={(e) => setName(e.target.value)} />
-        <input style={input} placeholder="Tipe (kota/kerajaan/gedung/...)" value={type} onChange={(e) => setType(e.target.value)} />
-        <label>
-          <input type="checkbox" checked={placeholder} onChange={(e) => setPlaceholder(e.target.checked)} /> Placeholder (belum final)
-        </label>
-        <div><button type="submit">Tambah</button></div>
-      </form>
-      <ul>
-        {places.map((p) => (
-          <li key={p.id} style={{ marginBottom: 8 }}>
-            <Link to={`/projects/${projectId}/places/${p.id}`}>{p.name}</Link>{" "}
-            <small>[{p.type ?? "-"}]</small>{" "}
-            {p.isPlaceholder && <small style={{ background: "#eee", padding: "2px 6px" }}>placeholder</small>}{" "}
-            <button onClick={() => remove(p.id)}>Hapus</button>
-          </li>
-        ))}
-      </ul>
-      {places.length === 0 && <p>Belum ada tempat.</p>}
-    </main>
+    <ProjectShell title="Atlas cerita" meta={<Badge>{places.length} lokasi</Badge>}>
+      <p className="kicker">perpustakaan tempat</p>
+      <Err message={err} />
+
+      <Card className="mt-3 p-4">
+        <form onSubmit={create} className="flex flex-col gap-3 md:flex-row md:items-end">
+          <div className="flex-1">
+            <Field label="Nama tempat baru">
+              <Input placeholder="cth. Pelabuhan Senja" value={name} onChange={(e) => setName(e.target.value)} />
+            </Field>
+          </div>
+          <div className="md:w-52">
+            <Field label="Tipe (kota/kerajaan/…)">
+              <Input value={type} onChange={(e) => setType(e.target.value)} />
+            </Field>
+          </div>
+          <label className="flex items-center gap-2 pb-2 text-sm text-ink-soft">
+            <input type="checkbox" checked={placeholder} onChange={(e) => setPlaceholder(e.target.checked)} className="accent-[#bc4b1f]" />
+            Placeholder
+          </label>
+          <Button variant="ink" type="submit"><Icon name="plus" /> Tambah</Button>
+        </form>
+      </Card>
+
+      {places.length === 0 ? (
+        <div className="mt-4"><Empty title="Peta masih kosong." hint="Tandai lokasi penting ceritamu lewat formulir di atas." /></div>
+      ) : (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {places.map((p) => (
+            <Link key={p.id} to={p.id} className="group">
+              <Card className="h-full p-4 transition-colors group-hover:border-ink-soft">
+                <div className="flex items-center gap-2">
+                  <Icon name="pin" className="text-ember" />
+                  <span className="font-display truncate text-xl font-semibold group-hover:underline group-hover:decoration-ember group-hover:underline-offset-4">
+                    {p.name}
+                  </span>
+                  <button
+                    onClick={(e) => { e.preventDefault(); remove(p.id, p.name); }}
+                    className="ml-auto rounded p-1.5 text-muted hover:bg-oxblood/10 hover:text-oxblood"
+                    title="Hapus"
+                  >
+                    <Icon name="trash" />
+                  </button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {p.type ? <Badge>{p.type}</Badge> : <Badge>tanpa tipe</Badge>}
+                  {p.isPlaceholder && <Badge>placeholder</Badge>}
+                </div>
+                {p.description && <p className="mt-2 line-clamp-2 text-sm text-ink-soft">{p.description}</p>}
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+    </ProjectShell>
   );
 }
 
@@ -88,6 +116,7 @@ export function PlaceDetailPage() {
   const [place, setPlace] = React.useState<Place | null>(null);
   const [form, setForm] = React.useState({ name: "", type: "", description: "", imageUrl: "", isPlaceholder: false });
   const [msg, setMsg] = React.useState("");
+  const [err, setErr] = React.useState("");
 
   async function load() {
     if (!projectId || !placeId) return;
@@ -101,8 +130,9 @@ export function PlaceDetailPage() {
         imageUrl: res.place.imageUrl ?? "",
         isPlaceholder: res.place.isPlaceholder,
       });
+      setErr("");
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Gagal memuat");
+      setErr(e instanceof Error ? e.message : "Gagal memuat");
     }
   }
 
@@ -123,34 +153,64 @@ export function PlaceDetailPage() {
         isPlaceholder: form.isPlaceholder,
       });
       setPlace(res.place);
-      setMsg("Tersimpan.");
+      setMsg("Tersimpan di atlas.");
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Gagal menyimpan");
+      setErr(e instanceof Error ? e.message : "Gagal menyimpan");
     }
   }
 
-  if (!place) return <main style={box}><p>{msg || "Memuat..."}</p><Link to={`/projects/${projectId}/places`}>← Tempat</Link></main>;
+  if (!place)
+    return (
+      <ProjectShell title="…">
+        <Err message={err} />
+        <p>Memuat…</p>
+      </ProjectShell>
+    );
 
   return (
-    <main style={box}>
-      <Link to={`/projects/${projectId}/places`}>← Tempat</Link>
-      <h1>{place.name}</h1>
-      <form onSubmit={save}>
-        <label>Nama</label>
-        <input style={input} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <label>Tipe</label>
-        <input style={input} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} />
-        <label>Deskripsi</label>
-        <textarea style={{ ...input, minHeight: 100 }} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        <label>Gambar URL (opsional)</label>
-        <input style={input} value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
-        <label><input type="checkbox" checked={form.isPlaceholder} onChange={(e) => setForm({ ...form, isPlaceholder: e.target.checked })} /> Placeholder</label>
-        <div>
-          <button type="submit">Simpan</button>{" "}
-          <button type="button" onClick={async () => { if (projectId && placeId && confirm("Hapus tempat ini?")) { await api.deletePlace(projectId, placeId); nav(`/projects/${projectId}/places`); } }}>Hapus tempat</button>
-        </div>
-      </form>
-      {msg && <p>{msg}</p>}
-    </main>
+    <ProjectShell
+      title={place.name}
+      meta={<>{place.type && <Badge>{place.type}</Badge>}{place.isPlaceholder && <Badge>placeholder</Badge>}</>}
+    >
+      <Link to=".." className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink">
+        <Icon name="back" /> Kembali ke atlas
+      </Link>
+      <Err message={err} />
+      <Ok message={msg} />
+
+      <Card className="mt-3 p-5">
+        <p className="kicker">catatan lokasi</p>
+        <form onSubmit={save} className="mt-3 space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="Nama">
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </Field>
+            <Field label="Tipe">
+              <Input value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} />
+            </Field>
+          </div>
+          <Field label="Deskripsi">
+            <Textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          </Field>
+          <Field label="Gambar URL (opsional)">
+            <Input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} />
+          </Field>
+          <label className="flex items-center gap-2 text-sm text-ink-soft">
+            <input type="checkbox" checked={form.isPlaceholder} onChange={(e) => setForm({ ...form, isPlaceholder: e.target.checked })} className="accent-[#bc4b1f]" />
+            Tandai sebagai placeholder
+          </label>
+          <div className="flex items-center gap-2">
+            <Button type="submit" variant="ink">Simpan</Button>
+            <button
+              type="button"
+              onClick={async () => { if (projectId && placeId && confirm(`Hapus "${place.name}"?`)) { await api.deletePlace(projectId, placeId); nav(".."); } }}
+              className="inline-flex items-center gap-1.5 text-sm text-oxblood hover:underline hover:underline-offset-4"
+            >
+              <Icon name="trash" /> Hapus tempat
+            </button>
+          </div>
+        </form>
+      </Card>
+    </ProjectShell>
   );
 }

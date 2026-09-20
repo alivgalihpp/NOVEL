@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-paper: #f6f1e7;
+  --color-paper-deep: #ede5d3;
+  --color-card: #fffdf7;
+  --color-ink: #1c1712;
+  --color-ink-soft: #57503f;
+  --color-muted: #8d8471;
+  --color-line: #ddd2bd;
+  --color-line-soft: #e9e1cf;
+  --color-ember: #bc4b1f;
+  --color-ember-deep: #93380f;
+  --color-oxblood: #8c1d18;
+  --color-moss: #5c6b34;
+  --color-gold: #b98a1d;
+}
+
+html {
+  background: var(--color-paper);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Seleksi teks ala stabilo kering */
+::selection {
+  background: #f0d48a;
+  color: #1c1712;
+}
+
+/* Label kecil kapital ala kolofon */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* Garis ganda editorial untuk judul bab */
+.rule-double {
+  border-top: 3px double var(--color-line);
+}
+
+/* Scrollbar ramping */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+/* React Flow: samakan dengan tema kertas */
+.xy-theme-novel .react-flow__background {
+  background: var(--color-paper);
+}
+.xy-theme-novel .react-flow__controls {
+  border: 1px solid var(--color-line);
+  box-shadow: none;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.xy-theme-novel .react-flow__controls-button {
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-line-soft);
+}
+.xy-theme-novel .react-flow__minimap {
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.xy-theme-novel .react-flow__edge path {
+  stroke: var(--color-ink-soft);
+  stroke-width: 1.75;
+}
+.xy-theme-novel .react-flow__edge.selected path {
+  stroke: var(--color-ember);
+}
+.xy-theme-novel .react-flow__edge-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--color-ink-soft);
+}

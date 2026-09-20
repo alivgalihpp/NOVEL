@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, setToken } from "../lib/api";
-import { box, input } from "../components/auth";
+import { Button, Card, Err, Field, Input, Ok, Page, Select } from "../components/ui";
 
 type Provider = "mock" | "openai_compatible";
 
@@ -20,6 +20,7 @@ export function SettingsPage() {
   const [hasKey, setHasKey] = React.useState(false);
   const [effective, setEffective] = React.useState("");
   const [msg, setMsg] = React.useState("");
+  const [err, setErr] = React.useState("");
 
   async function load() {
     try {
@@ -29,8 +30,9 @@ export function SettingsPage() {
       if (res.settings.baseUrl) setBaseUrl(res.settings.baseUrl);
       if (res.settings.model) setModel(res.settings.model);
       setEffective(res.settings.effective);
+      setErr("");
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Gagal memuat pengaturan");
+      setErr(e instanceof Error ? e.message : "Gagal memuat pengaturan");
     }
   }
 
@@ -40,6 +42,7 @@ export function SettingsPage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    setErr("");
     try {
       const res = await api.updateAiSettings({
         provider,
@@ -50,9 +53,9 @@ export function SettingsPage() {
       setApiKey("");
       setEffective(res.effective);
       await load();
-      setMsg("Tersimpan.");
+      setMsg("Pengaturan tersimpan.");
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Gagal menyimpan");
+      setErr(e instanceof Error ? e.message : "Gagal menyimpan");
     }
   }
 
@@ -67,48 +70,64 @@ export function SettingsPage() {
     setModel(PRESETS[name].model);
   }
 
+  const effectiveLabel =
+    effective === "user" ? "kunci milikmu" : effective === "server" ? "kunci server" : "Mock (tanpa kunci)";
+
   return (
-    <main style={box}>
-      <Link to="/dashboard">← Dashboard</Link>
-      <h1>Pengaturan AI</h1>
-      <p>
-        Sumber aktif saat ini: <strong>{effective === "user" ? "kunci milikmu" : effective === "server" ? "kunci server" : "Mock (tanpa kunci)"}</strong>
-      </p>
-      <p style={{ fontSize: 14, color: "#666" }}>
-        Urutan pakai: kunci milikmu → kunci server (.env) → Mock. Kunci milikmu disimpan
-        terenkripsi (AES-GCM) dan tidak pernah ditampilkan lagi setelah disimpan.
-      </p>
-      <form onSubmit={save}>
-        <label>Provider</label>
-        <select style={input} value={provider} onChange={(e) => setProvider(e.target.value as Provider)}>
-          <option value="mock">Mock — tanpa kunci (cocok untuk lokal/dev)</option>
-          <option value="openai_compatible">Kunci sendiri (OpenAI-compatible)</option>
-        </select>
-        {provider === "openai_compatible" && (
-          <>
-            <label>Preset</label>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-              {Object.keys(PRESETS).map((p) => (
-                <button type="button" key={p} onClick={() => applyPreset(p)}>{p}</button>
-              ))}
-            </div>
-            <label>API key {hasKey && "(sudah tersimpan — isi lagi hanya bila ingin mengganti)"}</label>
-            <input style={input} type="password" placeholder={hasKey ? "••••••••" : "sk-..."} value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
-            <label>Base URL</label>
-            <input style={input} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
-            <label>Model</label>
-            <input style={input} value={model} onChange={(e) => setModel(e.target.value)} />
-          </>
-        )}
-        <button type="submit">Simpan</button>{" "}
-        {hasKey && provider === "openai_compatible" && (
-          <button type="button" onClick={removeKey}>Hapus kunci</button>
-        )}
-      </form>
-      {msg && <p>{msg}</p>}
-      <hr />
+    <Page>
+      <Link to="/dashboard" className="text-sm text-ink-soft hover:text-ink">← Dashboard</Link>
+      <p className="kicker mt-2">pengaturan</p>
+      <h1 className="font-display mt-1 text-4xl font-semibold">Ruang mesin</h1>
+
+      <Card className="mt-5 p-5">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-display text-2xl font-semibold">Kecerdasan buatan</h2>
+          <span className="font-mono text-xs text-muted">aktif: {effectiveLabel}</span>
+        </div>
+        <p className="mt-1 text-sm text-ink-soft">
+          Urutan pakai: kunci milikmu → kunci server → Mock. Kunci disimpan terenkripsi dan tak pernah ditampilkan lagi.
+        </p>
+        <form onSubmit={save} className="mt-4 space-y-3">
+          <Field label="Provider">
+            <Select value={provider} onChange={(e) => setProvider(e.target.value as Provider)}>
+              <option value="mock">Mock — tanpa kunci, untuk lokal</option>
+              <option value="openai_compatible">Kunci sendiri (OpenAI-compatible)</option>
+            </Select>
+          </Field>
+          {provider === "openai_compatible" && (
+            <>
+              <div>
+                <span className="kicker mb-1 block">Preset</span>
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(PRESETS).map((p) => (
+                    <Button key={p} type="button" variant="ghost" onClick={() => applyPreset(p)}>{p}</Button>
+                  ))}
+                </div>
+              </div>
+              <Field label={hasKey ? "API key (tersimpan — isi bila ingin mengganti)" : "API key"}>
+                <Input type="password" placeholder={hasKey ? "••••••••" : "sk-…"} value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+              </Field>
+              <Field label="Base URL">
+                <Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
+              </Field>
+              <Field label="Model">
+                <Input value={model} onChange={(e) => setModel(e.target.value)} />
+              </Field>
+            </>
+          )}
+          <div className="flex gap-2">
+            <Button type="submit" variant="ink">Simpan</Button>
+            {hasKey && provider === "openai_compatible" && (
+              <Button type="button" variant="ghost" onClick={removeKey}>Hapus kunci</Button>
+            )}
+          </div>
+        </form>
+        <Ok message={msg} />
+        <Err message={err} />
+      </Card>
+
       <DangerZone />
-    </main>
+    </Page>
   );
 }
 
@@ -119,7 +138,7 @@ function DangerZone() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!confirm("Hapus akun BESERTA SELURUH project, karakter, bab, dan data AI? Tidak bisa dibatalkan!")) return;
+    if (!confirm("Hapus akun BESERTA SELURUH project dan datanya? Tidak bisa dibatalkan!")) return;
     if (!confirm("Yakin? Ini penghapusan permanen.")) return;
     try {
       await api.deleteAccount(password);
@@ -131,14 +150,14 @@ function DangerZone() {
   }
 
   return (
-    <section style={{ border: "2px solid #b00", borderRadius: 8, padding: 12, marginTop: 16 }}>
-      <h2 style={{ color: "#b00" }}>Zona Berbahaya</h2>
-      <p style={{ fontSize: 14 }}>Hapus akun beserta seluruh data (project, karakter, bab, relasi, kunci AI).</p>
-      <form onSubmit={submit}>
-        <input style={input} type="password" placeholder="Konfirmasi password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button type="submit" style={{ background: "#b00", color: "#fff" }}>Hapus akun permanen</button>
+    <Card className="mt-4 border-oxblood/60 p-5">
+      <h2 className="font-display text-2xl font-semibold text-oxblood">Zona berbahaya</h2>
+      <p className="mt-1 text-sm text-ink-soft">Hapus akun beserta seluruh project, tokoh, bab, dan kunci AI.</p>
+      <form onSubmit={submit} className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <Input type="password" placeholder="Konfirmasi password" value={password} onChange={(e) => setPassword(e.target.value)} className="flex-1" />
+        <Button type="submit" variant="danger">Hapus permanen</Button>
       </form>
-      {msg && <p style={{ color: "crimson" }}>{msg}</p>}
-    </section>
+      <Err message={msg} />
+    </Card>
   );
 }

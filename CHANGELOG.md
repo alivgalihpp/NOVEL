@@ -8,6 +8,22 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [UI Redesign] - 2026-09-20
+### Diubah
+- Desain ulang total frontend (di luar fase PRD): arah editorial "meja manuskrip" —
+  serif Fraunces + Space Grotesk + IBM Plex Mono, palet kertas (`#f6f1e7`) / tinta (`#1c1712`)
+  / ember (`#bc4b1f`), tanpa gradasi, tanpa dark-mode, tanpa emoji.
+- Tailwind CSS v4 (`@tailwindcss/vite`) + token `@theme` di `index.css`.
+- Komponen bersama baru (`components/ui.tsx`): TopBar tinta, ProjectShell dengan sidebar
+  workspace (Ringkasan/Roadmap/Karakter/Tempat/Menulis/Preview), Button/Badge/Card/Field,
+  ikon garis SVG, Empty/Err/Ok states.
+- Semua halaman ditulis ulang: landing daftar-isi, auth split editorial, dashboard kartu
+  bernomor, detail karakter/tempat, roadmap 3 tab, ruang menulis serif, preview buku
+  (drop-cap angka, garis ganda, ornamen ❦), settings.
+- Node diagram & family tree diselaraskan ke tema (kartu krem, label mono).
+- Hapus dependensi tak terpakai: `lucide-react`, `framer-motion`, `clsx`, `tailwind-merge`.
+- Fungsionalitas & API 100% tidak berubah (tidak ada migrasi DB).
+
 ## [Fase 9] - 2026-09-20
 ### Ditambah
 - Hardening (PRD §7): rate limit umum 300/menit per IP + khusus auth 30/menit

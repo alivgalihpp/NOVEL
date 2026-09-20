@@ -58,6 +58,8 @@ Platform Penulisan Novel Berbantuan AI. Lihat blueprint produk di `novelcraft-pr
   - Rate limit umum + auth, security headers, `DELETE /auth/account` (zona berbahaya di Settings).
   - Produksi: wajib HTTPS via reverse proxy, `JWT_SECRET` unik, Redis bila multi-instance.
 - 📝 Tracking rilis: lihat `CHANGELOG.md` (wajib diupdate tiap fase).
+- 🎨 UI: Tailwind v4 + tema editorial (Fraunces/Space Grotesk/Plex Mono, kertas & tinta).
+  Token di `frontend/src/index.css`, komponen di `frontend/src/components/ui.tsx`.
 
 ## Fase PRD §9
 1. Auth + dashboard + CRUD project (manual)

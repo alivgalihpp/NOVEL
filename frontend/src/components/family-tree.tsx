@@ -1,15 +1,9 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Background,
-  Controls,
-  MiniMap,
-  ReactFlow,
-  type Edge,
-  type Node,
-} from "@xyflow/react";
+import { Background, Controls, MiniMap, ReactFlow, type Edge, type Node } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { api, ROLE_LABEL, type Character } from "../lib/api";
+import { Empty, Err } from "./ui";
 
 type FamType = "parent" | "child" | "sibling" | "spouse";
 const FAMILY: ReadonlySet<string> = new Set(["parent", "child", "sibling", "spouse"]);
@@ -17,25 +11,25 @@ const FAMILY: ReadonlySet<string> = new Set(["parent", "child", "sibling", "spou
 /**
  * Konvensi arah (sesuai form relasi di halaman detail karakter):
  * dari halaman karakter X, user memilih Y + tipe T dengan arti "Y adalah T bagi X".
- * - T=parent  → Y orang tua X  (edge Y→X)
- * - T=child   → Y anak X       (edge X→Y)
- * - T=sibling/spouse → satu generasi (edge putus-putus)
  */
 function FamilyNode({ data }: { data: { name: string; role: string } & Record<string, unknown> }) {
   return (
     <div
       style={{
-        border: "2px solid #333",
+        border: "1.5px solid #1c1712",
         borderRadius: 999,
-        background: "#fff",
-        padding: "10px 18px",
+        background: "#fffdf7",
+        padding: "10px 20px",
         textAlign: "center",
-        minWidth: 130,
+        minWidth: 140,
         cursor: "pointer",
+        fontFamily: "'Space Grotesk', system-ui, sans-serif",
       }}
     >
-      <div style={{ fontWeight: "bold" }}>{data.name}</div>
-      <div style={{ fontSize: 12, color: "#666" }}>{data.role}</div>
+      <div style={{ fontFamily: "Fraunces, Georgia, serif", fontWeight: 600, fontSize: 15 }}>{data.name}</div>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "#bc4b1f" }}>
+        {data.role}
+      </div>
     </div>
   );
 }
@@ -43,7 +37,7 @@ function FamilyNode({ data }: { data: { name: string; role: string } & Record<st
 const nodeTypes = { family: FamilyNode };
 
 export function FamilyTree({ projectId }: { projectId: string }) {
-  const nav = useNavigate();
+  const navigate = useNavigate();
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const [edges, setEdges] = React.useState<Edge[]>([]);
   const [empty, setEmpty] = React.useState(false);
@@ -69,8 +63,7 @@ export function FamilyTree({ projectId }: { projectId: string }) {
         }
         const byId = new Map<string, Character>(chars.map((c) => [c.id, c]));
 
-        // Bangun edge orangtua→anak + tautan se-generasi.
-        const parentLinks: [string, string][] = []; // [parent, child]
+        const parentLinks: [string, string][] = [];
         const peerLinks: { a: string; b: string; type: FamType }[] = [];
         for (const r of fam) {
           if (!byId.has(r.characterId) || !byId.has(r.relatedCharacterId)) continue;
@@ -80,7 +73,6 @@ export function FamilyTree({ projectId }: { projectId: string }) {
           else peerLinks.push({ a: r.characterId, b: r.relatedCharacterId, type: t });
         }
 
-        // Generasi: fixpoint sederhana (asumsi tidak ada siklus).
         const gen = new Map<string, number>(chars.map((c) => [c.id, 0]));
         for (let i = 0; i < chars.length + fam.length + 2; i++) {
           for (const [p, c] of parentLinks) {
@@ -93,7 +85,6 @@ export function FamilyTree({ projectId }: { projectId: string }) {
           }
         }
 
-        // X per generasi (urut nama, rata tengah).
         const perGen = new Map<number, string[]>();
         for (const c of chars) {
           const g = gen.get(c.id) ?? 0;
@@ -103,7 +94,7 @@ export function FamilyTree({ projectId }: { projectId: string }) {
         for (const [g, ids] of perGen) {
           ids.sort((a, b) => (byId.get(a)?.name ?? "").localeCompare(byId.get(b)?.name ?? ""));
           ids.forEach((id, idx) => {
-            pos.set(id, { x: idx * 220 - ((ids.length - 1) * 110), y: g * 180 });
+            pos.set(id, { x: idx * 230 - ((ids.length - 1) * 115), y: g * 180 });
           });
         }
 
@@ -115,7 +106,7 @@ export function FamilyTree({ projectId }: { projectId: string }) {
             data: { name: c.name, role: ROLE_LABEL[c.role] },
           })),
         );
-        const flowEdges: Edge[] = [
+        setEdges([
           ...parentLinks.map(([p, c], i) => ({
             id: `p${i}-${p}-${c}`,
             source: p,
@@ -129,38 +120,42 @@ export function FamilyTree({ projectId }: { projectId: string }) {
             label: type === "spouse" ? "pasangan" : "saudara",
             style: { strokeDasharray: "6 4" },
           })),
-        ];
-        setEdges(flowEdges);
+        ]);
       } catch (e) {
         setErr(e instanceof Error ? e.message : "Gagal memuat family tree");
       }
     })();
   }, [projectId]);
 
-  if (err) return <p style={{ color: "crimson" }}>{err}</p>;
+  if (err) return <div className="p-4"><Err message={err} /></div>;
   if (empty)
     return (
-      <div>
-        <p>Belum ada relasi keluarga di project ini.</p>
-        <p>Tambahkan lewat <Link to={`/projects/${projectId}/characters`}>Perpustakaan Karakter</Link> → detail karakter → “Relasi keluarga”.</p>
+      <div className="p-4">
+        <Empty
+          title="Belum ada silsilah."
+          hint="Tautkan relasi keluarga antar tokoh — pohonnya tumbuh sendiri di sini."
+        >
+          <Link to={`/projects/${projectId}/characters`} className="text-sm font-medium text-ember-deep underline underline-offset-4">
+            Buka perpustakaan karakter
+          </Link>
+        </Empty>
       </div>
     );
 
   return (
-    <div>
-      <p style={{ fontSize: 13, color: "#666" }}>
-        Dibangun otomatis dari relasi bertipe orang tua/anak/saudara/pasangan (PRD §3.6.2).
-        Klik node untuk membuka halaman edit karakter.
+    <div className="p-4">
+      <p className="mb-3 max-w-2xl text-sm text-ink-soft">
+        Tumbuh otomatis dari relasi orang tua, anak, saudara, dan pasangan. Klik nama untuk membuka lembar tokohnya.
       </p>
-      <div style={{ height: 520, border: "1px solid #ccc", borderRadius: 8 }}>
+      <div className="xy-theme-novel h-[520px] overflow-hidden rounded-md border border-line">
         <ReactFlow
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
-          onNodeClick={(_, n) => nav(`/projects/${projectId}/characters/${n.id}`)}
+          onNodeClick={(_, n) => navigate(`/projects/${projectId}/characters/${n.id}`)}
           fitView
         >
-          <Background />
+          <Background color="#d8cdae" gap={24} size={1} />
           <Controls />
           <MiniMap />
         </ReactFlow>
