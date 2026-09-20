@@ -14,6 +14,7 @@ import { ProjectDetail } from "./pages/project-detail";
 import { CharacterDetailPage, CharactersPage } from "./pages/characters";
 import { PlaceDetailPage, PlacesPage } from "./pages/places";
 import { RoadmapPage } from "./pages/roadmap";
+import { WritePage } from "./pages/write";
 import { getToken } from "./lib/api";
 
 function Home() {
@@ -105,6 +106,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           element={
             <RequireAuth>
               <RoadmapPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects/:id/write"
+          element={
+            <RequireAuth>
+              <WritePage />
             </RequireAuth>
           }
         />

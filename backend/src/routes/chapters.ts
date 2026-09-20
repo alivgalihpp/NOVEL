@@ -32,6 +32,8 @@ const updateBody = t.Object({
   title: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   chapterNumber: t.Optional(t.Integer({ minimum: 1, maximum: 10000 })),
   outlineSummary: t.Optional(t.String({ maxLength: 20000 })),
+  // Fase 5: isi bab (markdown/teks). word_count dihitung otomatis server (PRD §3.7).
+  content: t.Optional(t.String({ maxLength: 500000 })),
   status: t.Optional(Status),
   isPlotTwist: t.Optional(t.Boolean()),
   roadmapPosX: t.Optional(t.Number()),
@@ -47,8 +49,14 @@ const edgeBody = t.Object({
 const assignBody = (key: string) =>
   t.Object({ [key]: t.String({ minLength: 1, maxLength: 36 }) });
 
-async function ownedChapter(projectId: string, chapterId: string) {
-  const rows = await db
+/** Hitung kata: teks kosong → 0, selain itu split whitespace. */
+function countWords(s: string): number {
+  const t = s.trim();
+  if (!t) return 0;
+  return t.split(/\s+/).length;
+}
+
+async function ownedChapter(projectId: string, chapterId: string) {  const rows = await db
     .select()
     .from(chapters)
     .where(
@@ -59,6 +67,7 @@ async function ownedChapter(projectId: string, chapterId: string) {
 }
 
 async function numberTaken(projectId: string, n: number, exceptId?: string) {
+
   const rows = await db
     .select({ id: chapters.id })
     .from(chapters)
@@ -155,6 +164,9 @@ export const chapterRoutes = new Elysia()
             : {}),
           ...(body.outlineSummary !== undefined
             ? { outlineSummary: body.outlineSummary.trim() }
+            : {}),
+          ...(body.content !== undefined
+            ? { content: body.content, wordCount: countWords(body.content) }
             : {}),
           ...(body.status !== undefined ? { status: body.status } : {}),
           ...(body.isPlotTwist !== undefined

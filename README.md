@@ -41,6 +41,9 @@ Platform Penulisan Novel Berbantuan AI. Lihat blueprint produk di `novelcraft-pr
     klik node → panel edit. Tab "Daftar Bab" (Fase 3) tetap ada.
   - Tab "Family Tree": otomatis dari relasi keluarga, klik node → edit karakter.
   - Backend: `GET /projects/:id/relationships` (semua relasi se-project).
+- ✅ Fase 5: Menulis manual (PRD §3.7, tanpa AI).
+  - Backend: `PATCH /projects/:id/chapters/:chapterId` terima `content`; `word_count` otomatis.
+  - Frontend: `/projects/:id/write` (list sinkron roadmap + editor + status; tombol AI nonaktif sampai Fase 7).
 - 📝 Tracking rilis: lihat `CHANGELOG.md` (wajib diupdate tiap fase).
 
 ## Fase PRD §9

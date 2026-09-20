@@ -8,6 +8,18 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Fase 5] - 2026-09-20
+### Ditambah
+- Modul Menulis manual (PRD §3.7 tanpa AI): halaman `/projects/:id/write`.
+  Daftar bab sinkron Roadmap (nomor, status, word count), editor isi per bab
+  (textarea markdown/teks, serif), penghitung kata live, tombol Simpan, ubah status
+  `outline/draft/final` dari editor, tombol "Generate dengan AI" nonaktif (hadir di Fase 7).
+- Backend: `PATCH /projects/:id/chapters/:chapterId` menerima `content` (maks 500rb karakter);
+  `word_count` dihitung otomatis server (teks kosong → 0).
+### Keputusan
+- Editor MVP berupa textarea + tombol Simpan manual (tanpa autosave / rich-text toolbar);
+  ringkasan bab ditampilkan sebagai konteks menulis. Bisa ditingkatkan di Hardening.
+
 ## [Fase 4] - 2026-09-20
 ### Ditambah
 - Roadmap diagram visual (React Flow, PRD §3.6.1): tab "Alur Cerita (Diagram)" di `/projects/:id/roadmap`.
