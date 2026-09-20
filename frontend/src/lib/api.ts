@@ -297,4 +297,9 @@ export const api = {
       "/projects/ai-assist",
       { method: "POST", body: JSON.stringify(body) },
     ),
+  generateChapter: (projectId: string, chapterId: string) =>
+    request<{ chapter: Chapter; aiSource: string }>(
+      `/projects/${projectId}/chapters/${chapterId}/generate`,
+      { method: "POST" },
+    ),
 };

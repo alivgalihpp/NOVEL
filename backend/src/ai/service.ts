@@ -49,6 +49,38 @@ export interface GenerateResult {
 export interface AiProvider {
   readonly name: string;
   generateRoadmap(brief: AiBrief): Promise<GenerateResult>;
+  writeChapter(brief: ChapterBrief): Promise<ChapterResult>;
+}
+
+// Kontrak I/O PRD §6.2 — AI Chapter Writer.
+export interface ChapterContextCharacter {
+  name: string;
+  role: string;
+  personalityTraits?: string | null;
+  backstory?: string | null;
+}
+
+export interface ChapterContextPlace {
+  name: string;
+  type?: string | null;
+  description?: string | null;
+}
+
+export interface ChapterBrief {
+  projectTitle: string;
+  chapterNumber: number;
+  chapterTitle: string;
+  outlineSummary: string;
+  previousSummaries: { chapterNumber: number; title: string; summary: string }[];
+  characters: ChapterContextCharacter[];
+  places: ChapterContextPlace[];
+}
+
+export interface ChapterResult {
+  text: string;
+  tokensUsed: number | null;
+  provider: string;
+  model: string | null;
 }
 
 const VALID_ROLES = new Set(["protagonist", "antagonist", "supporting", "minor"]);
@@ -85,6 +117,35 @@ export function normalizeRoadmap(raw: unknown): RoadmapOutput {
 /** Provider lokal deterministik — dipakai bila user & server belum punya API key. */
 export class MockProvider implements AiProvider {
   readonly name = "mock";
+
+  async writeChapter(brief: ChapterBrief): Promise<ChapterResult> {
+    const paras: string[] = [];
+    paras.push(`## Bab ${brief.chapterNumber}: ${brief.chapterTitle}\n`);
+    paras.push(
+      brief.outlineSummary.trim()
+        ? `${brief.outlineSummary.trim()}\n`
+        : `(Belum ada ringkasan untuk bab ini — tulis draf bebas, lalu edit.)\n`,
+    );
+    if (brief.previousSummaries.length > 0) {
+      const prev = brief.previousSummaries
+        .map((p) => `Bab ${p.chapterNumber} (${p.title}): ${(p.summary || "-").slice(0, 150)}`)
+        .join(" | ");
+      paras.push(`Sebelumnya: ${prev}\n`);
+    }
+    if (brief.characters.length > 0) {
+      paras.push(
+        `Karakter yang muncul: ${brief.characters.map((c) => `${c.name} (${c.role})`).join(", ")}.`,
+      );
+    }
+    if (brief.places.length > 0) {
+      paras.push(`Tempat: ${brief.places.map((p) => p.name).join(", ")}.`);
+    }
+    paras.push(
+      "\n[Draf Mock — ganti dengan tulisanmu, atau generate ulang setelah setting API key di menu Settings.]",
+    );
+    const text = paras.join("\n");
+    return { text, tokensUsed: null, provider: "mock", model: null };
+  }
 
   async generateRoadmap(brief: AiBrief): Promise<GenerateResult> {
     const n = Math.max(1, Math.min(100, brief.chapterCount));
@@ -197,6 +258,80 @@ export class OpenAiCompatibleProvider implements AiProvider {
     }
     return {
       output: normalizeRoadmap(parsed),
+      tokensUsed: data.usage?.total_tokens ?? null,
+      provider: "openai_compatible",
+      model: this.model,
+    };
+  }
+
+  async writeChapter(brief: ChapterBrief): Promise<ChapterResult> {
+    const ctx = [
+      `Novel: ${brief.projectTitle}`,
+      `Bab ${brief.chapterNumber}: ${brief.chapterTitle}`,
+      `Ringkasan bab ini: ${brief.outlineSummary.trim() || "(kosong)"}`,
+      brief.previousSummaries.length > 0
+        ? `Ringkasan bab sebelumnya:\n${brief.previousSummaries
+            .map((p) => `- Bab ${p.chapterNumber} (${p.title}): ${p.summary || "-"}`)
+            .join("\n")}`
+        : "Ini bab pertama.",
+      brief.characters.length > 0
+        ? `Karakter relevan:\n${brief.characters
+            .map((c) => `- ${c.name} (${c.role})${c.personalityTraits ? `, sifat: ${c.personalityTraits}` : ""}${c.backstory ? `, latar: ${c.backstory}` : ""}`)
+            .join("\n")}`
+        : "",
+      brief.places.length > 0
+        ? `Tempat relevan:\n${brief.places
+            .map((p) => `- ${p.name}${p.type ? ` (${p.type})` : ""}${p.description ? `: ${p.description}` : ""}`)
+            .join("\n")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    const url = `${this.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            {
+              role: "system",
+              content:
+                "Kamu penulis novel berbahasa Indonesia. Tulis isi bab berdasarkan konteks yang diberikan. " +
+                "Balas HANYA teks naratif bab (boleh markdown), tanpa pembuka/penutup meta. " +
+                "Jaga kesinambungan dengan bab sebelumnya dan konsistensi karakter/tempat.",
+            },
+            { role: "user", content: ctx },
+          ],
+          temperature: 0.9,
+          max_tokens: 3000,
+        }),
+        signal: AbortSignal.timeout(180000),
+      });
+    } catch (e) {
+      throw new Error(`Tidak bisa menghubungi AI (${e instanceof Error ? e.message : "network error"})`);
+    }
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        res.status === 401 || res.status === 403
+          ? "API key ditolak provider. Periksa kunci di menu Settings."
+          : `Provider AI error (${res.status}): ${text.slice(0, 300)}`,
+      );
+    }
+    const data = (await res.json()) as {
+      choices?: { message?: { content?: string } }[];
+      usage?: { total_tokens?: number };
+    };
+    const text = data.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error("Provider AI mengembalikan respons kosong");
+    return {
+      text,
       tokensUsed: data.usage?.total_tokens ?? null,
       provider: "openai_compatible",
       model: this.model,

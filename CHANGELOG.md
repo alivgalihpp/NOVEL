@@ -8,6 +8,16 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Fase 7] - 2026-09-20
+### Ditambah
+- AI Chapter Writer (PRD §3.7 + kontrak §6.2): `POST /projects/:id/chapters/:chapterId/generate`.
+  Konteks = ringkasan bab + ringkasan bab-bab sebelumnya + karakter/tempat ter-assign
+  (atau seluruh data project bila belum di-assign). Hasil disimpan ke `content`,
+  status otomatis jadi `draft`, tercatat di `ai_generation_logs` (tipe `chapter`).
+  Rate limit & resolusi provider sama seperti Fase 6.
+- Tombol "Generate dengan AI" di halaman Menulis aktif (konfirmasi bila menimpa isi,
+  hasil langsung editable di editor).
+
 ## [Fase 6] - 2026-09-20
 ### Ditambah
 - AI Roadmap Generator (PRD §3.2 + kontrak §6.1): `POST /projects/ai-assist`

@@ -24,6 +24,7 @@ export function WritePage() {
   const [status, setStatus] = React.useState<ChapterStatus>("outline");
   const [savedCount, setSavedCount] = React.useState(0);
   const [dirty, setDirty] = React.useState(false);
+  const [generating, setGenerating] = React.useState(false);
   const [msg, setMsg] = React.useState("");
 
   const selected = chapters.find((c) => c.id === selectedId) ?? null;
@@ -73,6 +74,26 @@ export function WritePage() {
     }
   }
 
+  async function generate() {
+    if (!projectId || !selectedId || generating) return;
+    if (content.trim() && !confirm("Timpa isi saat ini dengan hasil generate AI? (Bisa diedit lagi setelahnya.)")) return;
+    setGenerating(true);
+    setMsg("");
+    try {
+      const res = await api.generateChapter(projectId, selectedId);
+      setChapters(chapters.map((c) => (c.id === selectedId ? res.chapter : c)));
+      setContent(res.chapter.content);
+      setStatus(res.chapter.status);
+      setSavedCount(res.chapter.wordCount);
+      setDirty(false);
+      setMsg(`Hasil AI (${res.aiSource}) tersimpan sebagai draf — silakan edit.`);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Gagal generate");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   return (
     <main style={{ ...box, maxWidth: 1000 }}>
       <Link to={`/projects/${projectId}`}>← Project</Link>
@@ -116,13 +137,9 @@ export function WritePage() {
                 <select value={status} onChange={(e) => { setStatus(e.target.value as ChapterStatus); setDirty(true); }}>
                   {STATUSES.map((s) => (<option key={s} value={s}>{CHAPTER_STATUS_LABEL[s]}</option>))}
                 </select>
-                <button onClick={save}>Simpan</button>
-                <button
-                  disabled
-                  title="Hadir di Fase 7 (AI Chapter Writer)"
-                  style={{ opacity: 0.5, cursor: "not-allowed" }}
-                >
-                  Generate dengan AI (Fase 7)
+                <button onClick={save} disabled={generating}>Simpan</button>
+                <button onClick={generate} disabled={generating}>
+                  {generating ? "Generate... (bisa ~1 menit)" : "Generate dengan AI"}
                 </button>
                 <span style={{ fontSize: 13, color: "#666" }}>
                   {liveCount(content)} kata (draf){dirty ? " · belum tersimpan" : ` · tersimpan: ${savedCount} kata`}

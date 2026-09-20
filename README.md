@@ -48,6 +48,9 @@ Platform Penulisan Novel Berbantuan AI. Lihat blueprint produk di `novelcraft-pr
   - Backend: `POST /projects/ai-assist`, `GET/PUT /settings/ai`, `DELETE /settings/ai/key`;
     provider user → server (`.env`) → Mock; rate limit 5/menit. Migrasi `0001`.
   - Frontend: `/settings` (Mock/kunci sendiri + preset), form onboarding AI di Dashboard.
+- ✅ Fase 7: AI Chapter Writer (PRD §6.2).
+  - Backend: `POST /projects/:id/chapters/:chapterId/generate` (konteks + fallback, auto-draft, log).
+  - Frontend: tombol Generate aktif di `/projects/:id/write`.
 - 📝 Tracking rilis: lihat `CHANGELOG.md` (wajib diupdate tiap fase).
 
 ## Fase PRD §9

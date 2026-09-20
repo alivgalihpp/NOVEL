@@ -1,8 +1,10 @@
 import { Elysia, t } from "elysia";
-import { eq } from "drizzle-orm";
+import { and, asc, eq, inArray, lt } from "drizzle-orm";
 import { db } from "../db";
 import {
   aiGenerationLogs,
+  chapterCharacters,
+  chapterPlaces,
   chapters,
   characters,
   places,
@@ -12,8 +14,15 @@ import {
   userAiSettings,
 } from "../db/schema";
 import { authenticate, jwtPlugin } from "../auth";
+import { getOwnedProject } from "../ownership";
 import { decryptApiKey, encryptApiKey } from "../crypto";
 import { resolveRoadmapProvider } from "../ai/service";
+
+function countWords(s: string): number {
+  const t = s.trim();
+  if (!t) return 0;
+  return t.split(/\s+/).length;
+}
 
 // Rate limit sederhana in-memory untuk endpoint AI (PRD §7):
 // maks 5 request / 60 detik per user. Hardening penuh di Fase 9.
@@ -251,4 +260,116 @@ export const aiRoutes = new Elysia()
       chaptersCount: chapterIds.length,
       aiSource: source,
     };
-  }, { body: assistBody });
+  }, { body: assistBody })
+  // Tulis isi bab dengan AI (PRD §6.2): konteks = ringkasan bab + bab sebelumnya +
+  // karakter/tempat ter-assign (atau seluruh project bila belum ada). Hasil editable,
+  // status otomatis jadi draft.
+  .post(
+    "/projects/:id/chapters/:chapterId/generate",
+    async ({ headers, jwt, params, status }) => {
+      const user = await authenticate(headers, (tok) => jwt.verify(tok));
+      if (!user) return status(401, { message: "Unauthorized" });
+      if (aiRateLimited(user.id))
+        return status(429, { message: "Terlalu sering. Coba lagi sekitar 1 menit." });
+      const project = await getOwnedProject(user.id, params.id);
+      if (!project) return status(404, { message: "Project tidak ditemukan" });
+      const chRows = await db
+        .select()
+        .from(chapters)
+        .where(
+          and(eq(chapters.id, params.chapterId), eq(chapters.projectId, params.id)),
+        )
+        .limit(1);
+      const chapter = chRows[0];
+      if (!chapter) return status(404, { message: "Bab tidak ditemukan" });
+
+      const prev = await db
+        .select()
+        .from(chapters)
+        .where(
+          and(
+            eq(chapters.projectId, params.id),
+            lt(chapters.chapterNumber, chapter.chapterNumber),
+          ),
+        )
+        .orderBy(asc(chapters.chapterNumber));
+
+      const charLinks = await db
+        .select()
+        .from(chapterCharacters)
+        .where(eq(chapterCharacters.chapterId, params.chapterId));
+      const placeLinks = await db
+        .select()
+        .from(chapterPlaces)
+        .where(eq(chapterPlaces.chapterId, params.chapterId));
+      const allChars = await db
+        .select()
+        .from(characters)
+        .where(eq(characters.projectId, params.id));
+      const allPlaces = await db
+        .select()
+        .from(places)
+        .where(eq(places.projectId, params.id));
+      const useChars =
+        charLinks.length > 0
+          ? allChars.filter((c) => charLinks.some((l) => l.characterId === c.id))
+          : allChars;
+      const usePlaces =
+        placeLinks.length > 0
+          ? allPlaces.filter((p) => placeLinks.some((l) => l.placeId === p.id))
+          : allPlaces;
+
+      const { provider, source } = await resolveRoadmapProvider(user.id);
+      let result;
+      try {
+        result = await provider.writeChapter({
+          projectTitle: project.title,
+          chapterNumber: chapter.chapterNumber,
+          chapterTitle: chapter.title,
+          outlineSummary: chapter.outlineSummary,
+          previousSummaries: prev.map((p) => ({
+            chapterNumber: p.chapterNumber,
+            title: p.title,
+            summary: p.outlineSummary,
+          })),
+          characters: useChars.map((c) => ({
+            name: c.name,
+            role: c.role,
+            personalityTraits: c.personalityTraits,
+            backstory: c.backstory,
+          })),
+          places: usePlaces.map((p) => ({
+            name: p.name,
+            type: p.type,
+            description: p.description,
+          })),
+        });
+      } catch (e) {
+        return status(502, {
+          message: e instanceof Error ? e.message : "Gagal generate isi bab",
+        });
+      }
+
+      await db
+        .update(chapters)
+        .set({
+          content: result.text,
+          wordCount: countWords(result.text),
+          status: "draft",
+        })
+        .where(eq(chapters.id, params.chapterId));
+      await db.insert(aiGenerationLogs).values({
+        id: crypto.randomUUID(),
+        projectId: params.id,
+        generationType: "chapter",
+        referenceId: params.chapterId,
+        tokensUsed: result.tokensUsed,
+      });
+      const [updated] = await db
+        .select()
+        .from(chapters)
+        .where(eq(chapters.id, params.chapterId))
+        .limit(1);
+      return { chapter: updated, aiSource: source };
+    },
+  );
