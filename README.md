@@ -19,7 +19,12 @@ Platform Penulisan Novel Berbantuan AI. Lihat blueprint produk di `novelcraft-pr
 
 ## Aturan eksekusi
 - Setiap tahap (sesuai PRD §9) di-push ke GitHub **sebelum** lanjut ke tahap berikutnya.
-- Tahap 0 (ini): scaffolding + skema DB MySQL. Belum ada Auth/CRUD — itu Fase 1.
+- ✅ Tahap 0: scaffolding + skema DB MySQL.
+- ✅ Fase 1: Auth (register/login/me, JWT + bcrypt via Bun.password) + Dashboard + CRUD project manual.
+  - Backend: `GET /health`, `POST /auth/register`, `POST /auth/login`, `GET /auth/me`,
+    `GET/POST /projects`, `GET/PATCH/DELETE /projects/:id` (semua project di-scope ke user pemilik).
+  - Migrasi: `bun run db:generate` (dari root) → SQL di `backend/drizzle/`; apply: `bun run db:migrate`.
+  - Frontend: `/login`, `/register`, `/dashboard`, `/projects/:id` (proxy `/api` → backend).
 
 ## Fase PRD §9
 1. Auth + dashboard + CRUD project (manual)

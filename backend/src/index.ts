@@ -1,5 +1,7 @@
 import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
+import { authRoutes } from "./routes/auth";
+import { projectRoutes } from "./routes/projects";
 
 const app = new Elysia()
   .use(
@@ -14,9 +16,11 @@ const app = new Elysia()
   }))
   .get("/", () => ({
     ok: true,
-    message: "NovelCraft API (Bun + Elysia + MySQL) — Tahap 0 scaffolding",
+    message: "NovelCraft API (Bun + Elysia + MySQL) — Fase 1: Auth + Projects",
     docs: "Lihat PRD novelcraft-prd.md bagian 9 untuk fase berikutnya.",
   }))
+  .use(authRoutes)
+  .use(projectRoutes)
   .listen(Number(process.env.PORT ?? 3000));
 
 console.log(

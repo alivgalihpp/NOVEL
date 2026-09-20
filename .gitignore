@@ -13,9 +13,8 @@ bun.lockb
 .env.local
 .env.*.local
 
-# drizzle
-drizzle/
-*.sql
+# drizzle (generated SQL di backend/drizzle WAJIB di-commit; hanya cache yang diabaikan)
+.drizzle/
 
 # OS / editor
 .DS_Store

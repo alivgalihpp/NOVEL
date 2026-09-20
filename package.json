@@ -8,8 +8,7 @@
     "dev:backend": "bun --hot run backend/src/index.ts",
     "dev:frontend": "bun run --cwd frontend dev",
     "dev": "bun run dev:backend & bun run dev:frontend",
-    "db:generate": "bunx drizzle-kit generate",
-    "db:migrate": "bunx drizzle-kit migrate",
-    "db:push": "bunx drizzle-kit push"
+    "db:generate": "bun run --cwd backend db:generate",
+    "db:migrate": "bun run --cwd backend db:migrate"
   }
 }
