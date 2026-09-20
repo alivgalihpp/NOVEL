@@ -378,7 +378,7 @@ export async function resolveRoadmapProvider(
     return {
       provider: new OpenAiCompatibleProvider(
         key,
-        s.baseUrl || "https://elizabeth-waterproof-plant-screenshot.trycloudflare.com",
+        s.baseUrl || "https://elizabeth-waterproof-plant-screenshot.trycloudflare.com/v1",
         s.model || "Combomaut",
       ),
       source: "user",
@@ -389,7 +389,7 @@ export async function resolveRoadmapProvider(
     return {
       provider: new OpenAiCompatibleProvider(
         serverKey,
-        process.env.AI_BASE_URL?.trim() || "https://elizabeth-waterproof-plant-screenshot.trycloudflare.com",
+        process.env.AI_BASE_URL?.trim() || "https://elizabeth-waterproof-plant-screenshot.trycloudflare.com/v1",
         process.env.AI_MODEL?.trim() || "Combomaut",
       ),
       source: "server",
